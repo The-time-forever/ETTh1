@@ -59,6 +59,7 @@ cmd 示例：
 - Ridge（S 模式 96→96）：`RIDGE_S96_H96.md`（脚本 `scripts/ridge_s96_h96.py`，输出 `outputs/ridge/`）
 - 局部水平锚定 Ridge（S 模式 96→96）：`RIDGE_LEVEL_S96_H96.md`（脚本 `scripts/ridge_level_s96_h96.py`，输出 `outputs/ridge_level/`）
 - 轻量 MLP（S 模式 96→96）：`MLP_S96_H96.md`（脚本 `scripts/mlp_s96_h96.py`，输出 `outputs/mlp/`）
+- GRU（S 模式 96→96）：`GRU_S96_H96.md`（脚本 `scripts/gru_s96_h96.py`，输出 `outputs/gru/`）
 - 论文与背景：`RELATED_PAPERS.md`；BibTeX：`references.bib`
 
 ## 约定
