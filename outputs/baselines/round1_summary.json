@@ -1,0 +1,179 @@
+{
+  "protocol": {
+    "split": "official_ETT_12_4_4",
+    "seq_len": 96,
+    "pred_lens": [
+      96,
+      192,
+      336,
+      720
+    ],
+    "evaluation": "direct multi-horizon on the official val/test target blocks",
+    "units": "degrees Celsius (raw OT)",
+    "note": "MAE(H) is averaged over all steps 1..H, not only the final step"
+  },
+  "train_mean": 17.1282616982271,
+  "definitions": {
+    "B0_global_mean": "predict train OT mean",
+    "B1_persistence": "predict last observed OT",
+    "B2a_local_mean_24": "predict mean of the last 24 observations",
+    "B2b_local_mean_96": "predict mean of the last 96 observations",
+    "B3_seasonal_naive_24": "repeat the last 24h OT pattern"
+  },
+  "test_mse": {
+    "96": {
+      "B0_global_mean": 161.496125100557,
+      "B1_persistence": 5.832595931445698,
+      "B2a_local_mean_24": 5.454416899595843,
+      "B2b_local_mean_96": 5.617221460032131,
+      "B3_seasonal_naive_24": 6.016949959713828
+    },
+    "192": {
+      "B0_global_mean": 163.2060119412523,
+      "B1_persistence": 7.744052902274719,
+      "B2a_local_mean_24": 7.160755645091546,
+      "B2b_local_mean_96": 7.026807329258218,
+      "B3_seasonal_naive_24": 7.711358745550829
+    },
+    "336": {
+      "B0_global_mean": 165.81652632520016,
+      "B1_persistence": 9.538576546093,
+      "B2a_local_mean_24": 8.767774880583644,
+      "B2b_local_mean_96": 8.215870173673954,
+      "B3_seasonal_naive_24": 9.33296372248558
+    },
+    "720": {
+      "B0_global_mean": 170.49304460462764,
+      "B1_persistence": 10.877943368608308,
+      "B2a_local_mean_24": 9.917050551929895,
+      "B2b_local_mean_96": 9.202481008438143,
+      "B3_seasonal_naive_24": 10.544999617197703
+    }
+  },
+  "test_mae": {
+    "96": {
+      "B0_global_mean": 12.324109200329112,
+      "B1_persistence": 1.865423066608211,
+      "B2a_local_mean_24": 1.8198106968211638,
+      "B2b_local_mean_96": 1.8213811408900393,
+      "B3_seasonal_naive_24": 1.9317724391497015
+    },
+    "192": {
+      "B0_global_mean": 12.407551961803819,
+      "B1_persistence": 2.1627448608204527,
+      "B2a_local_mean_24": 2.0818861507289346,
+      "B2b_local_mean_96": 2.0632324444016716,
+      "B3_seasonal_naive_24": 2.173272299790277
+    },
+    "336": {
+      "B0_global_mean": 12.528262438134508,
+      "B1_persistence": 2.4336440889212376,
+      "B2a_local_mean_24": 2.3416247840998667,
+      "B2b_local_mean_96": 2.2750992299334563,
+      "B3_seasonal_naive_24": 2.417220020430947
+    },
+    "720": {
+      "B0_global_mean": 12.75773821382698,
+      "B1_persistence": 2.6006967482217913,
+      "B2a_local_mean_24": 2.487801423535188,
+      "B2b_local_mean_96": 2.3952090459669084,
+      "B3_seasonal_naive_24": 2.566018409142891
+    }
+  },
+  "val_mse": {
+    "96": {
+      "B0_global_mean": 27.131021811420236,
+      "B1_persistence": 11.558117069926999,
+      "B2a_local_mean_24": 10.557877190213903,
+      "B2b_local_mean_96": 10.155096807451963,
+      "B3_seasonal_naive_24": 11.797267698771838
+    },
+    "192": {
+      "B0_global_mean": 26.800379951733866,
+      "B1_persistence": 14.051615923378005,
+      "B2a_local_mean_24": 12.407312323192011,
+      "B2b_local_mean_96": 11.107092362821328,
+      "B3_seasonal_naive_24": 13.667873538868621
+    },
+    "336": {
+      "B0_global_mean": 25.398217978575868,
+      "B1_persistence": 15.66074830071312,
+      "B2a_local_mean_24": 13.65562274176095,
+      "B2b_local_mean_96": 12.49130137099295,
+      "B3_seasonal_naive_24": 14.874425332289661
+    },
+    "720": {
+      "B0_global_mean": 22.15207619057032,
+      "B1_persistence": 20.885497770643102,
+      "B2a_local_mean_24": 18.90667282319799,
+      "B2b_local_mean_96": 17.69340910297578,
+      "B3_seasonal_naive_24": 19.998063462341058
+    }
+  },
+  "val_mae": {
+    "96": {
+      "B0_global_mean": 4.2987826155908415,
+      "B1_persistence": 2.598826495479995,
+      "B2a_local_mean_24": 2.548775694189853,
+      "B2b_local_mean_96": 2.609823369215851,
+      "B3_seasonal_naive_24": 2.6214775717112206
+    },
+    "192": {
+      "B0_global_mean": 4.264923290599218,
+      "B1_persistence": 2.918490045623249,
+      "B2a_local_mean_24": 2.7889268961459726,
+      "B2b_local_mean_96": 2.7004091468883598,
+      "B3_seasonal_naive_24": 2.8567914315924794
+    },
+    "336": {
+      "B0_global_mean": 4.154835447962823,
+      "B1_persistence": 3.1212365404007,
+      "B2a_local_mean_24": 2.9539259684189196,
+      "B2b_local_mean_96": 2.8560742712642195,
+      "B3_seasonal_naive_24": 3.029665830662246
+    },
+    "720": {
+      "B0_global_mean": 3.8555265782773396,
+      "B1_persistence": 3.634538308639037,
+      "B2a_local_mean_24": 3.482217194769618,
+      "B2b_local_mean_96": 3.378182347556725,
+      "B3_seasonal_naive_24": 3.5475371391609327
+    }
+  },
+  "test_skill_vs_B1": {
+    "96": {
+      "B0_global_mean": -26.688550175380954,
+      "B1_persistence": 0.0,
+      "B2a_local_mean_24": 0.06483888757164724,
+      "B2b_local_mean_96": 0.036926005837709885,
+      "B3_seasonal_naive_24": -0.03160754326803428
+    },
+    "192": {
+      "B0_global_mean": -20.075012529074094,
+      "B1_persistence": 0.0,
+      "B2a_local_mean_24": 0.0753219618388501,
+      "B2b_local_mean_96": 0.09261888859331258,
+      "B3_seasonal_naive_24": 0.004221840570625024
+    },
+    "336": {
+      "B0_global_mean": -16.383781062502308,
+      "B1_persistence": 0.0,
+      "B2a_local_mean_24": 0.0808088776962298,
+      "B2b_local_mean_96": 0.138669157397581,
+      "B3_seasonal_naive_24": 0.021555923214941153
+    },
+    "720": {
+      "B0_global_mean": -14.673279298055402,
+      "B1_persistence": 0.0,
+      "B2a_local_mean_24": 0.08833405213814305,
+      "B2b_local_mean_96": 0.15402381713120827,
+      "B3_seasonal_naive_24": 0.030607233383050825
+    }
+  },
+  "best_by_horizon": {
+    "96": "B2a_local_mean_24",
+    "192": "B2b_local_mean_96",
+    "336": "B2b_local_mean_96",
+    "720": "B2b_local_mean_96"
+  }
+}

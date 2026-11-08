@@ -2,7 +2,7 @@
 
 ## 项目
 
-`D:\Document\ETTh1` 是一个单数据集工作目录：中国某省电力变压器的小时级油温/负荷数据（ETTh1），用于长序列时序预测（LSTF）的基准研究。当前阶段只有数据、调研文档与三个只读分析/准备脚本（数据质量检查、EDA、官方划分），**没有模型代码、没有训练实验**。
+`D:\Document\ETTh1` 是一个单数据集工作目录：中国某省电力变压器的小时级油温/负荷数据（ETTh1），用于长序列时序预测（LSTF）的基准研究。当前阶段有数据、调研文档、三个只读分析/准备脚本（质量检查、EDA、官方划分）与一个基线评估脚本，**没有训练模型、没有训练实验**。
 
 ## Python / ML 环境（重要）
 
@@ -55,6 +55,7 @@ cmd 示例：
 - 数据质量检查结论与已知伪影：`DATA_QUALITY.md`（脚本 `scripts/data_quality_check.py`，输出 `outputs/data_quality/`）
 - 探索性分析与预测难度基线：`EDA.md`（脚本 `scripts/eda_etth1.py`，输出 `outputs/eda/`）
 - 官方 12/4/4 划分与窗口索引：`SPLITS.md`（脚本 `scripts/make_splits.py`，输出 `outputs/splits/`）
+- 第一轮基线（B0–B3）：`BASELINES_ROUND1.md`（脚本 `scripts/baselines_round1.py`，输出 `outputs/baselines/`）
 - 论文与背景：`RELATED_PAPERS.md`；BibTeX：`references.bib`
 
 ## 约定
