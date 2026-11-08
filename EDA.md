@@ -4,6 +4,7 @@
 > 运行环境：`D:\SoftWare\Anaconda\envs\ml\python.exe`（见 `AGENTS.md`）
 > 数据：`ETTh1.csv`，17,420 行，2016-07-01 — 2018-06-26，小时级
 > 口径：日历效应用**训练段**估计；描述性统计用全样本；基线只用 **test** 段（2017-10-24 — 2018-02-20）
+> 划分：官方 12/4/4，详见 `SPLITS.md` 与 `outputs/splits/split_manifest.json`
 > 说明：本机未安装 statsmodels，未做 ADF/KPSS；用 ACF/PACF、差分与滚动统计代替
 
 ## 0. 结论速览

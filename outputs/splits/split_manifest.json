@@ -1,0 +1,134 @@
+{
+  "source": {
+    "path": "D:\\Document\\ETTh1\\ETTh1.csv",
+    "sha256": "f18de3ad269cef59bb07b5438d79bb3042d3be49bdeecf01c1cd6d29695ee066",
+    "rows": 17420,
+    "start": "2016-07-01 00:00:00",
+    "end": "2018-06-26 19:00:00"
+  },
+  "protocol": {
+    "name": "official_ETT_12_4_4",
+    "month_days": 30,
+    "train_months": 12,
+    "val_months": 4,
+    "test_months": 4,
+    "label_len": 48,
+    "seq_lens": [
+      96
+    ],
+    "pred_lens": [
+      96,
+      192,
+      336,
+      720
+    ]
+  },
+  "row_blocks": {
+    "train": {
+      "start_idx": 0,
+      "end_idx": 8640,
+      "rows": 8640,
+      "start": "2016-07-01 00:00:00",
+      "end": "2017-06-25 23:00:00"
+    },
+    "val": {
+      "start_idx": 8640,
+      "end_idx": 11520,
+      "rows": 2880,
+      "start": "2017-06-26 00:00:00",
+      "end": "2017-10-23 23:00:00"
+    },
+    "test": {
+      "start_idx": 11520,
+      "end_idx": 14400,
+      "rows": 2880,
+      "start": "2017-10-24 00:00:00",
+      "end": "2018-02-20 23:00:00"
+    },
+    "unused": {
+      "start_idx": 14400,
+      "end_idx": 17420,
+      "rows": 3020,
+      "start": "2018-02-21 00:00:00",
+      "end": "2018-06-26 19:00:00"
+    }
+  },
+  "target_blocks": {
+    "val": {
+      "start_idx": 8640,
+      "end_idx": 11520,
+      "rows": 2880,
+      "start": "2017-06-26 00:00:00",
+      "end": "2017-10-23 23:00:00"
+    },
+    "test": {
+      "start_idx": 11520,
+      "end_idx": 14400,
+      "rows": 2880,
+      "start": "2017-10-24 00:00:00",
+      "end": "2018-02-20 23:00:00"
+    }
+  },
+  "sample_arrays": {
+    "96": {
+      "train": {
+        "border1": 0,
+        "border2": 8640,
+        "rows": 8640,
+        "lookback_start": "2016-07-01 00:00:00",
+        "target_start_idx": 96,
+        "target_end_idx": 8640,
+        "target_start": "2016-07-05 00:00:00",
+        "target_end": "2017-06-25 23:00:00"
+      },
+      "val": {
+        "border1": 8544,
+        "border2": 11520,
+        "rows": 2976,
+        "lookback_start": "2017-06-22 00:00:00",
+        "target_start_idx": 8640,
+        "target_end_idx": 11520,
+        "target_start": "2017-06-26 00:00:00",
+        "target_end": "2017-10-23 23:00:00"
+      },
+      "test": {
+        "border1": 11424,
+        "border2": 14400,
+        "rows": 2976,
+        "lookback_start": "2017-10-20 00:00:00",
+        "target_start_idx": 11520,
+        "target_end_idx": 14400,
+        "target_start": "2017-10-24 00:00:00",
+        "target_end": "2018-02-20 23:00:00"
+      }
+    }
+  },
+  "counts": {
+    "96": {
+      "train": {
+        "96": 8449,
+        "192": 8353,
+        "336": 8209,
+        "720": 7825
+      },
+      "val": {
+        "96": 2785,
+        "192": 2689,
+        "336": 2545,
+        "720": 2161
+      },
+      "test": {
+        "96": 2785,
+        "192": 2689,
+        "336": 2545,
+        "720": 2161
+      }
+    }
+  },
+  "caveats": [
+    "月份按 30 天计，不是日历月；切分点是行索引，不对齐月初/月末。",
+    "val/test 的输入窗口（border1）包含前一段末尾 L 行 lookback；目标块仍是 2,880 行。",
+    "标准协议只使用前 14,400 行；末尾 3,020 行不参与。",
+    "test 覆盖 2017-10-24 至 2018-02-20，只有冬季，不能代表全年。"
+  ]
+}
