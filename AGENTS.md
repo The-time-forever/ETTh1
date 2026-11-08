@@ -66,6 +66,7 @@ cmd 示例：
 - Horizon 192（S 96→192，Ridge/PatchTST）：`S96_H192.md`（脚本 `scripts/forecast_s96_h192.py`，输出 `outputs/h192/`）
 - Horizon 336（S 96→336，Anchored Ridge）：`S96_H336.md`（脚本 `scripts/forecast_s96_h336.py`，输出 `outputs/h336/`）
 - Horizon 720（S 96→720，Anchored Ridge，收官）：`S96_H720.md`（脚本 `scripts/forecast_s96_h720.py`，输出 `outputs/h720/`）
+- DLinear（S 96→96）：`DLINEAR_S96_H96.md`（脚本 `scripts/dlinear_s96_h96.py`，输出 `outputs/dlinear/`）
 - 论文与背景：`RELATED_PAPERS.md`；BibTeX：`references.bib`
 
 ## 约定
