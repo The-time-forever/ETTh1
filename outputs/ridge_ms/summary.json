@@ -1,0 +1,240 @@
+{
+  "protocol": {
+    "mode": "MS (7 input channels), target OT",
+    "seq_len": 96,
+    "horizon": 96,
+    "anchor": "l_t = mean(last 24h OT)",
+    "standardization": "per-channel, train statistics only",
+    "alphas": [
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "alpha_selection": "val MAE",
+    "primary_control": "S_control (per-variable scaler + anchor)",
+    "secondary_control": "existing S anchored Ridge (per-lag scaler)"
+  },
+  "best_alpha": {
+    "S_control": 100.0,
+    "MS": 1000.0
+  },
+  "n_features": {
+    "S_control": 96,
+    "MS": 672
+  },
+  "test_metrics": [
+    {
+      "model": "B1_persistence",
+      "mse": 5.832595931445698,
+      "mae": 1.865423066608211,
+      "bias": 0.12147263682562744,
+      "rmse": NaN,
+      "mse_step_centered": NaN,
+      "mae_step_centered": NaN,
+      "mse_skill_vs_S_existing (per-lag)": -0.26447000117549035,
+      "mae_skill_vs_S_existing (per-lag)": -0.1427330655328367,
+      "mse_skill_vs_S_control (per-variable)": -0.2641148990424862,
+      "mae_skill_vs_S_control (per-variable)": -0.14257262970645268,
+      "mse_skill_vs_B2a_local_mean_24": -0.06933445660852877,
+      "mae_skill_vs_B2a_local_mean_24": -0.025064348652704682
+    },
+    {
+      "model": "B2a_local_mean_24",
+      "mse": 5.454416899595843,
+      "mae": 1.8198106968211638,
+      "bias": 0.14428756775915233,
+      "rmse": NaN,
+      "mse_step_centered": NaN,
+      "mae_step_centered": NaN,
+      "mse_skill_vs_S_existing (per-lag)": -0.18248317293155214,
+      "mae_skill_vs_S_existing (per-lag)": -0.11479154165764327,
+      "mse_skill_vs_S_control (per-variable)": -0.1821510952258263,
+      "mae_skill_vs_S_control (per-variable)": -0.11463502872594789,
+      "mse_skill_vs_B2a_local_mean_24": 0.0,
+      "mae_skill_vs_B2a_local_mean_24": 0.0
+    },
+    {
+      "model": "S_existing (per-lag)",
+      "mse": 4.612680353051901,
+      "mae": 1.632422411561528,
+      "bias": 0.10505433805260435,
+      "rmse": NaN,
+      "mse_step_centered": NaN,
+      "mae_step_centered": NaN,
+      "mse_skill_vs_S_existing (per-lag)": 0.0,
+      "mae_skill_vs_S_existing (per-lag)": 0.0,
+      "mse_skill_vs_S_control (per-variable)": 0.0002808308086977851,
+      "mae_skill_vs_S_control (per-variable)": 0.000140396590615266,
+      "mse_skill_vs_B2a_local_mean_24": 0.15432200399025475,
+      "mae_skill_vs_B2a_local_mean_24": 0.10297130662379594
+    },
+    {
+      "model": "S_control (per-variable)",
+      "mse": 4.613976099691289,
+      "mae": 1.6326516302840823,
+      "bias": 0.10514657079310194,
+      "rmse": 2.148016782916579,
+      "mse_step_centered": 4.599402064501093,
+      "mae_step_centered": 1.6401771454293346,
+      "mse_skill_vs_S_existing (per-lag)": -0.00028090969679506195,
+      "mae_skill_vs_S_existing (per-lag)": -0.00014041630458572207,
+      "mse_skill_vs_S_control (per-variable)": 0.0,
+      "mae_skill_vs_S_control (per-variable)": 0.0,
+      "mse_skill_vs_B2a_local_mean_24": 0.1540844448408094,
+      "mae_skill_vs_B2a_local_mean_24": 0.10284534916956467
+    },
+    {
+      "model": "MS (7 channels)",
+      "mse": 5.411533804760736,
+      "mae": 1.7952637090201304,
+      "bias": 0.021302148360634612,
+      "rmse": 2.3262703636423554,
+      "mse_step_centered": 5.408870470904162,
+      "mae_step_centered": 1.796972146131198,
+      "mse_skill_vs_S_existing (per-lag)": -0.1731863885127629,
+      "mae_skill_vs_S_existing (per-lag)": -0.09975438728682562,
+      "mse_skill_vs_S_control (per-variable)": -0.1728569216305238,
+      "mae_skill_vs_S_control (per-variable)": -0.09959998552033622,
+      "mse_skill_vs_B2a_local_mean_24": 0.007862086016616199,
+      "mae_skill_vs_B2a_local_mean_24": 0.01348875893735102
+    }
+  ],
+  "segments": [
+    {
+      "segment": "1-24",
+      "steps": 24,
+      "S_control_mse": 2.219680200974101,
+      "S_control_mae": 1.129993025045756,
+      "S_control_bias": 0.029602885072705514,
+      "MS_mse": 2.6192507326732266,
+      "MS_mae": 1.267031552839896,
+      "MS_bias": -0.015393349307132357,
+      "B2a_mse": 3.2517357479614173,
+      "B2a_mae": 1.3735336557322715,
+      "B2a_bias": 0.05017196259264604,
+      "MS_mse_skill_vs_S": -0.1800126574646994,
+      "MS_mae_skill_vs_S": -0.1212737820116998,
+      "MS_mse_skill_vs_B2a": 0.1945068924142157,
+      "MS_mae_skill_vs_B2a": 0.07753876466579623
+    },
+    {
+      "segment": "25-48",
+      "steps": 24,
+      "S_control_mse": 4.35766166632666,
+      "S_control_mae": 1.6285708111110424,
+      "S_control_bias": 0.0776412649495627,
+      "MS_mse": 4.936027781187294,
+      "MS_mae": 1.7479354031038625,
+      "MS_bias": -0.019285401215496243,
+      "B2a_mse": 5.3200210740284275,
+      "B2a_mae": 1.8164417460626563,
+      "B2a_bias": 0.10664374648561581,
+      "MS_mse_skill_vs_S": -0.13272396049695478,
+      "MS_mae_skill_vs_S": -0.07329407550377698,
+      "MS_mse_skill_vs_B2a": 0.0721789044625657,
+      "MS_mae_skill_vs_B2a": 0.037714582979216926
+    },
+    {
+      "segment": "49-72",
+      "steps": 24,
+      "S_control_mse": 5.621974311123257,
+      "S_control_mae": 1.842483253464532,
+      "S_control_bias": 0.13112924054195133,
+      "MS_mse": 6.542856775989908,
+      "MS_mae": 2.008736328716987,
+      "MS_bias": 0.02989216344687558,
+      "B2a_mse": 6.315622635422081,
+      "B2a_mae": 1.9998197482561835,
+      "B2a_bias": 0.1720085434102853,
+      "MS_mse_skill_vs_S": -0.16380054655259735,
+      "MS_mae_skill_vs_S": -0.09023315405436616,
+      "MS_mse_skill_vs_B2a": -0.035979689364806555,
+      "MS_mae_skill_vs_B2a": -0.004458692073912474
+    },
+    {
+      "segment": "73-96",
+      "steps": 24,
+      "S_control_mse": 6.256588220341136,
+      "S_control_mae": 1.9295594315149982,
+      "S_control_bias": 0.182212892608188,
+      "MS_mse": 7.5479999291925175,
+      "MS_mae": 2.157351551419774,
+      "MS_bias": 0.08999518051829164,
+      "B2a_mse": 6.93028814097147,
+      "B2a_mae": 2.0894476372335444,
+      "B2a_bias": 0.2483260185480627,
+      "MS_mse_skill_vs_S": -0.20640829528349047,
+      "MS_mae_skill_vs_S": -0.11805395375975758,
+      "MS_mse_skill_vs_B2a": -0.08913219416796969,
+      "MS_mae_skill_vs_B2a": -0.03249850007063837
+    }
+  ],
+  "win_stats": {
+    "n_windows": 2785,
+    "ms_vs_s_mae": {
+      "mean": 0.16261207873604794,
+      "ci95_low": 0.1126130080426994,
+      "ci95_high": 0.22634383568009447,
+      "median": 0.16524623591096077
+    },
+    "ms_vs_s_mse": {
+      "mean": 0.7975577050694467,
+      "ci95_low": 0.5261961812270682,
+      "ci95_high": 1.1345429640763387,
+      "median": 0.8091161102540065
+    },
+    "ms_vs_b2a_mae": {
+      "mean": -0.024546987801033524,
+      "ci95_low": -0.15337611272632296,
+      "ci95_high": 0.13051969791846907,
+      "median": -0.016812729354751282
+    },
+    "ms_vs_b2a_mse": {
+      "mean": -0.04288309483510677,
+      "ci95_low": -0.7169739557247773,
+      "ci95_high": 0.7513783611537045,
+      "median": 0.0021247153022390533
+    },
+    "ms_win_rate_vs_s_pct": 27.935368043087973,
+    "ms_win_rate_vs_b2a_pct": 50.80789946140036
+  },
+  "channel_importance": [
+    {
+      "channel": "HUFL",
+      "mean_abs_coef": 0.0032230177796307652,
+      "is_target": false
+    },
+    {
+      "channel": "HULL",
+      "mean_abs_coef": 0.016869547315050963,
+      "is_target": false
+    },
+    {
+      "channel": "MUFL",
+      "mean_abs_coef": 0.003376800956367638,
+      "is_target": false
+    },
+    {
+      "channel": "MULL",
+      "mean_abs_coef": 0.014584878419116832,
+      "is_target": false
+    },
+    {
+      "channel": "LUFL",
+      "mean_abs_coef": 0.004913447793177465,
+      "is_target": false
+    },
+    {
+      "channel": "LULL",
+      "mean_abs_coef": 0.00827970991964339,
+      "is_target": false
+    },
+    {
+      "channel": "OT",
+      "mean_abs_coef": 0.012782110078942114,
+      "is_target": true
+    }
+  ]
+}
