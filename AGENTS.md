@@ -63,6 +63,7 @@ cmd 示例：
 - LSTM（S 模式 96→96）：`LSTM_S96_H96.md`（脚本 `scripts/lstm_s96_h96.py`，输出 `outputs/lstm/`）
 - PatchTST（S 模式 96→96）：`PATCHTST_S96_H96.md`（脚本 `scripts/patchtst_s96_h96.py`，输出 `outputs/patchtst/`）
 - MS Anchored Ridge（96h×7→96h OT）：`RIDGE_MS_S96_H96.md`（脚本 `scripts/ridge_ms_s96_h96.py`，输出 `outputs/ridge_ms/`）
+- Horizon 192（S 96→192，Ridge/PatchTST）：`S96_H192.md`（脚本 `scripts/forecast_s96_h192.py`，输出 `outputs/h192/`）
 - 论文与背景：`RELATED_PAPERS.md`；BibTeX：`references.bib`
 
 ## 约定
