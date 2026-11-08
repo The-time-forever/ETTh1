@@ -69,6 +69,7 @@ cmd 示例：
 - DLinear（S 96→96）：`DLINEAR_S96_H96.md`（脚本 `scripts/dlinear_s96_h96.py`，输出 `outputs/dlinear/`）
 - 长历史 PatchTST（S 336→96 vs 96→96）：`PATCHTST_L336_H96.md`（脚本 `scripts/patchtst_l336_h96.py`，输出 `outputs/patchtst_l336/`）
 - SegRNN（S 336→96）：`SEGRNN_L336_H96.md`（脚本 `scripts/segrnn_l336_h96.py`，输出 `outputs/segrnn/`）
+- Attention 消融（PatchTST vs No-Attention，S 96→96）：`PATCHTST_NOATTN_S96_H96.md`（脚本 `scripts/patchtst_noattn_s96_h96.py`，输出 `outputs/attn_ablation/`）
 - 论文与背景：`RELATED_PAPERS.md`；BibTeX：`references.bib`
 
 ## 约定
