@@ -61,6 +61,7 @@ cmd 示例：
 - 轻量 MLP（S 模式 96→96）：`MLP_S96_H96.md`（脚本 `scripts/mlp_s96_h96.py`，输出 `outputs/mlp/`）
 - GRU（S 模式 96→96）：`GRU_S96_H96.md`（脚本 `scripts/gru_s96_h96.py`，输出 `outputs/gru/`）
 - LSTM（S 模式 96→96）：`LSTM_S96_H96.md`（脚本 `scripts/lstm_s96_h96.py`，输出 `outputs/lstm/`）
+- PatchTST（S 模式 96→96）：`PATCHTST_S96_H96.md`（脚本 `scripts/patchtst_s96_h96.py`，输出 `outputs/patchtst/`）
 - 论文与背景：`RELATED_PAPERS.md`；BibTeX：`references.bib`
 
 ## 约定
