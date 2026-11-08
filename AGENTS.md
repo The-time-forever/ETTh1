@@ -2,7 +2,7 @@
 
 ## 项目
 
-`D:\Document\ETTh1` 是一个单数据集工作目录：中国某省电力变压器的小时级油温/负荷数据（ETTh1），用于长序列时序预测（LSTF）的基准研究。当前阶段有数据、调研文档、三个只读分析/准备脚本（质量检查、EDA、官方划分）与一个基线评估脚本，**没有训练模型、没有训练实验**。
+`D:\Document\ETTh1` 是一个单数据集工作目录：中国某省电力变压器的小时级油温/负荷数据（ETTh1），用于长序列时序预测（LSTF）的基准研究。当前阶段有数据、调研文档、三个只读分析/准备脚本（质量检查、EDA、官方划分）与基线/Ridge 实验脚本，**没有神经网络训练实验**。
 
 ## Python / ML 环境（重要）
 
@@ -56,6 +56,7 @@ cmd 示例：
 - 探索性分析与预测难度基线：`EDA.md`（脚本 `scripts/eda_etth1.py`，输出 `outputs/eda/`）
 - 官方 12/4/4 划分与窗口索引：`SPLITS.md`（脚本 `scripts/make_splits.py`，输出 `outputs/splits/`）
 - 第一轮基线（B0–B3）：`BASELINES_ROUND1.md`（脚本 `scripts/baselines_round1.py`，输出 `outputs/baselines/`）
+- Ridge（S 模式 96→96）：`RIDGE_S96_H96.md`（脚本 `scripts/ridge_s96_h96.py`，输出 `outputs/ridge/`）
 - 论文与背景：`RELATED_PAPERS.md`；BibTeX：`references.bib`
 
 ## 约定
@@ -66,4 +67,28 @@ cmd 示例：
 - 新脚本放 `scripts/`，输出（图、表、日志、checkpoint）放 `outputs/`，不要污染根目录。
 - 质量检查脚本：`& "D:\SoftWare\Anaconda\envs\ml\python.exe" scripts\data_quality_check.py`。
 - 若做预测实验，遵守 `DATASET.md` 里的 12/4/4 个月划分，标准化只在训练段拟合，指标为反归一化后的 MSE/MAE。
-- 本阶段只做数据理解与文献调研；未获明确指示前不要启动训练实验。
+- 本阶段做数据理解、文献调研、基线与线性模型；未获明确指示前不要启动神经网络训练。
+- 每轮实验/步骤完成后自动提交；可用 `/commit-round <name>` 执行标准流程（见下节）。
+
+## 提交约定（项目级）
+
+本项目要求：**每完成一轮实验或一个明确步骤，立即提交一次，不必再次询问**。这是对本项目默认“仅在用户要求时提交”的覆盖。
+
+一轮的完成标准：
+
+1. 脚本成功运行，输出写入 `outputs/`。
+2. 对应的报告/说明（如 `*_ROUND*.md`）已更新。
+3. `git status --short` 与 `git diff --stat` 已检查。
+
+提交流程：
+
+1. 只 stage 本轮相关文件。
+2. 不提交 `__pycache__/`、`*.pyc`、临时文件、密钥、checkpoint（除非明确需要）。
+3. 提交信息：
+   - 标题：`<type>: <summary>`
+   - `type`：`data` / `exp` / `docs` / `feat` / `fix` / `chore`
+   - 正文：脚本、输出目录、关键配置（seq_len/pred_len/alpha 等）、关键指标（MSE/MAE/skill）。
+4. 提交后运行 `git log --oneline -1` 与 `git status --short`，确认工作区干净。
+5. 在最终回复中报告 commit hash。
+
+失败处理：若实验失败或输出不完整，不要提交半成品；先修复，或用 `fix:` / `docs:` 单独记录失败原因。
