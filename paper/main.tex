@@ -1,0 +1,327 @@
+\documentclass[UTF8,a4paper,11pt,fontset=fandol]{ctexart}
+
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\bibliographystyle{gbt7714-numerical}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.25em}
+\renewcommand{\arraystretch}{1.08}
+
+\title{\bfseries 越复杂越好？\\[6pt]
+\large 基于 ETTh1 的油温单变量长序列预测研究}
+\author{匿名作者\\
+\small 代码、数据与实验记录随文附上}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+长序列时序预测（LSTF）研究近年来不断引入更复杂的网络结构，但在真实工业场景中，模型复杂度是否必然带来更高精度仍缺乏系统证据。本文以 ETTh1 电力变压器油温（OT）预测为对象，在 S 模式（仅使用历史 OT）与官方 12/4/4 划分下，系统比较了统计基线、线性模型、MLP、GRU、LSTM、DLinear、PatchTST 与 SegRNN 等十余种方法，并考察了预测长度、负载输入、历史长度和自注意力机制的影响。结果表明：不进行水平处理时，复杂模型在冬季测试集上因分布漂移产生 0.78--3.34~℃ 的系统偏差，原始误差甚至劣于简单基线；引入最近 24~h 均值锚定后，各模型迅速收敛到相近水平，简单的 Anchored Ridge 在 96/192/336/720 步上均保持最优或并列最优（96 步 MAE 1.632~℃，720 步 2.116~℃）。负载输入、更长历史与自注意力均未带来稳定增益；远期误差在 336 步后饱和，局部水平基线成为强对照。本文最终给出一个简单、可解释、易部署的油温预测方案，并说明在 ETTh1 上“更复杂”并不等于“更准确”。
+
+\vspace{0.6em}
+\noindent\textbf{关键词：}长序列时序预测；油温预测；ETTh1；线性模型；水平锚定；基准评测；通道独立
+\end{abstract}
+
+\vspace{0.4em}
+\begin{center}
+\rule{0.9\linewidth}{0.4pt}
+\end{center}
+
+\section*{Abstract}
+\noindent
+Long-term time-series forecasting (LSTF) has seen a rapid growth in model complexity, yet whether such complexity translates into accuracy in practical industrial settings remains unclear. Using the ETTh1 transformer oil-temperature (OT) dataset, we conduct a controlled univariate (S-mode) study under the official 12/4/4 split. We compare statistical baselines, linear models, MLPs, GRUs, LSTMs, DLinear, PatchTST, and SegRNN, and examine the effects of forecast horizon, load inputs, look-back length, and self-attention. Without level handling, complex models exhibit systematic biases of 0.78--3.34~℃ on the winter test set and can be worse than simple baselines. A 24-hour local-level anchor removes most of this bias; with anchoring, a simple Anchored Ridge is the best or tied-best model at 96/192/336/720 steps (MAE 1.632~℃ at 96 and 2.116~℃ at 720). Load inputs, longer history, and self-attention provide no robust gain, and errors saturate beyond 336 steps. We conclude with a simple, interpretable, deployment-ready OT forecasting recipe, and show that more complexity is not necessarily better on ETTh1.
+
+\vspace{0.4em}
+\noindent\textbf{Keywords:} long-term time-series forecasting; oil temperature forecasting; ETTh1; linear model; level anchoring; benchmark; channel independence
+
+\section{引言}
+
+电力变压器油温（Oil Temperature, OT）是反映设备热状态与负载能力的关键变量。准确的日前至数周油温预测，可用于越限预警、动态负载调度与检修计划制定。与一般时序预测任务相比，油温序列具有显著的年周期、较强的热惯性和明显的年际水平漂移；在实际系统中，往往只能获得 OT 自身的历史记录，而负载、环境温度等外生变量并不总是可用。因此，\emph{仅依赖 OT 历史}的单变量长序列预测，是一个既有现实意义、又便于控制变量的研究场景。ETTh1 正是这一场景下最常用的公开基准：它由 Informer 作者收集并随论文发布，包含中国某省两个变压器 2016--2018 年的小时级记录\cite{informer2021,etdataset2021}。
+
+近年来，LSTF 的方法演进呈现出明显的复杂化趋势。Informer 以稀疏注意力和生成式解码器降低了长序列建模的计算代价\cite{informer2021}；Autoformer 引入序列分解与自相关机制\cite{autoformer2021}；FEDformer 在频域进行低秩增强\cite{fedformer2022}；Pyraformer 使用金字塔式注意力\cite{pyraformer2022}；Crossformer 进一步建模变量之间的跨维依赖\cite{crossformer2023}；PatchTST 将序列切分为 patch 并用自注意力学习片段关系\cite{patchtst2023}；iTransformer 则将变量维作为 token\cite{itransformer2024}；TimesNet 通过周期折叠把一维序列转为二维变化建模\cite{timesnet2023}。这些工作不断刷新基准精度，也在无形中强化了一个假设：\emph{结构越复杂，预测越准确}。
+
+然而，另一条研究线索给出了相反的提示。Zeng 等在 ``Are Transformers Effective for Time Series Forecasting?'' 中系统指出，简单的线性模型（DLinear）在多个长序列基准上可以持平甚至超过复杂的 Transformer\cite{dlinear2023}；TiDE 用稠密编码器与线性解码器取得了有竞争力的结果\cite{tide2023}；TSMixer 以全 MLP 结构在多变量预测中表现强健\cite{tsmixer2023}；N-HiTS 通过多速率采样与分层插值改进了长 horizon 预测\cite{nhits2023}；N-BEATS 则展示了纯 MLP 基函数展开的有效性\cite{nbeats2020}。与此同时，RevIN 表明，一个简单的可逆实例归一化就能显著缓解分布漂移带来的误差\cite{revin2022}；PatchTST 与后续的通道独立（channel independent, CI）研究也指出，通道独立策略在鲁棒性上往往优于通道混合\cite{patchtst2023,ci2023}。这些结果共同说明：\emph{性能提升未必来自更复杂的 token mixing，而可能来自水平处理、归一化或通道独立等更简单的归纳偏置。}
+
+在上述两条线索之间，S 模式（仅使用目标变量自身的历史，输入与输出均为单变量）提供了一个理想的“去混淆”视角。Time-Series-Library 等统一评测框架将 S 模式与多变量 M、MS 模式并列，DLinear、PatchTST 等论文也报告了单变量或通道独立的设置\cite{tslib2024,dlinear2023,patchtst2023}。S 模式剥离了负载、天气等外生变量和跨通道混合的影响，使我们能够直接回答一个更基础的问题：\emph{在只有 OT 历史的情况下，增加模型复杂度是否真的有用？} 对 ETTh1 而言，这个问题尤其尖锐：OT 的年周期与年际水平漂移很强，而官方 12/4/4 划分的测试集恰好落在冬季，训练集与测试集之间存在明显的分布偏移。若模型不能处理这种水平变化，再复杂的结构也可能被系统性偏差淹没。
+
+现有比较往往同时改变了多个因素：模型结构、输入变量（S/M/MS）、历史长度、预测长度、归一化方式与训练预算。由此得到的“复杂模型更好”或“线性模型更好”的结论，难以归因到单一机制。尤其是，\emph{负载输入是否提供增量信息}、\emph{更长历史是否被有效利用}、\emph{自注意力是否不可替代}这三个问题，在 ETTh1 的 S 模式下仍缺乏系统的、可复现的证据。本文不提出新的网络结构，而是以受控实验回答这些问题，并给出一个可直接部署的油温预测方案。
+
+本文的主要贡献如下：
+\begin{itemize}
+\item 在 ETTh1 的 S 模式与官方 12/4/4 划分下，构建了一个覆盖统计基线、线性模型、MLP、GRU、LSTM、DLinear、PatchTST、SegRNN 等十余种方法的受控基准，统一了输入/输出、标准化、alpha/早停与评价协议。
+\item 识别出\textbf{局部水平锚定}是决定性能的关键机制：将输入与目标同时减去最近 24~h 的 OT 均值，可消除 0.78--3.34~℃ 的系统偏差，并使线性模型获得平移等变性；未锚定的复杂模型在冬季测试集上显著退化。
+\item 证明在 ETTh1 上，简单的 Anchored Ridge 在 96/192/336/720 步上均保持最优或并列最优；负载输入、更长历史与自注意力均未带来稳定增益，而 DLinear 的趋势分解与水平锚定在功能上是替代关系。
+\item 给出面向 OT 预测的最终方案、可复现的实验协议与失败模式分析，说明“更复杂”并不等于“更准确”，并为后续引入天气等外生变量提供基线。
+\end{itemize}
+
+\section{相关工作}
+
+\subsection{长序列预测与 ETTh1 基准}
+
+ETTh1 随 Informer 发布，包含 17,420 条小时级记录（2016-07-01 至 2018-06-26），字段为高/中/低三档有用/无用负荷与油温 OT\cite{informer2021,etdataset2021}。Informer 之后，Autoformer、FEDformer、Pyraformer、Crossformer 等工作均将其作为标准长序列基准，并沿用 12/4/4 个月的训练/验证/测试划分\cite{autoformer2021,fedformer2022,pyraformer2022,crossformer2023}。PatchTST 与 iTransformer 分别从 patch 表示和变量维注意力两个方向推进了这一基准\cite{patchtst2023,itransformer2024}；TimesNet 则将其纳入通用时序分析框架\cite{timesnet2023}。Time-Series-Library 统一了这些模型的数据管道与评测协议，使 S/M/MS 三种模式可以在同一套划分下比较\cite{tslib2024}。
+
+\subsection{模型家族}
+
+\textbf{Transformer 家族}以自注意力为核心，通过稀疏化、分解、频域增强、跨维建模、patch 化或变量维反转等机制扩展长序列建模能力\cite{informer2021,autoformer2021,fedformer2022,pyraformer2022,crossformer2023,patchtst2023,itransformer2024,timesnet2023}。\textbf{循环网络}以 GRU/LSTM 为代表；SegRNN 将序列切分为固定长度 segment，用 GRU 编码历史 segment，并以 parallel multi-step 方式解码未来 segment，以降低长 horizon 的误差累积\cite{segrnn2023}。\textbf{CNN/MLP 家族}包括 SCINet 的样本卷积与交互\cite{scinet2022}、TSMixer 的时间/通道混合\cite{tsmixer2023}、N-HiTS 的多速率分层插值\cite{nhits2023} 与 N-BEATS 的基函数展开\cite{nbeats2020}。\textbf{线性家族}以 DLinear 为代表，将序列分解为趋势与季节项后分别做线性映射\cite{dlinear2023}；TiDE 则用稠密编码器与线性解码器处理协变量\cite{tide2023}。
+
+\subsection{归一化、通道独立与 S 模式}
+
+分布漂移是时序预测的核心难点之一。RevIN 通过对每个输入窗口做可逆实例归一化，在归一化空间预测后再恢复均值与方差，显著提升了非平稳序列的精度\cite{revin2022}。PatchTST 采用通道独立策略，将每个变量单独建模，避免了跨通道混合带来的过拟合\cite{patchtst2023}；Han 等进一步从容量与鲁棒性的权衡角度解释了 CI 策略的有效性\cite{ci2023}。S 模式可以看作通道独立思想在“单目标”场景下的极端形式：输入与输出都只包含 OT，因而完全排除了负载与跨通道信息的干扰。本文沿用这一设置，以回答“仅凭 OT 历史，复杂度是否值得”的问题。
+
+\subsection{本文定位}
+
+本文不是新的架构论文，而是一项受控的实证研究。与 DLinear、PatchTST、RevIN 等工作相比，我们的区别在于：在同一 S 模式协议下，同时比较统计基线、线性、循环、卷积/MLP 与 Transformer 家族，并把“水平锚定”作为一个显式的、可解释的机制单独考察；同时通过负载输入、历史长度与注意力消融，区分“输入信息”“模型容量”与“token mixing 机制”的贡献。最终，我们将结论落到一个可部署的 OT 预测方案，而不是停留在基准排名。
+
+\section{问题定义与实验协议}
+
+\subsection{数据与 S 模式}
+
+ETTh1 包含 17,420 条小时级记录，时间范围为 2016-07-01 00:00 至 2018-06-26 19:00，字段为 \texttt{HUFL, HULL, MUFL, MULL, LUFL, LULL, OT}。本文只使用 OT 作为输入与输出（S 模式）：
+\begin{equation}
+\mathbf{x}_t = (y_{t-95}, \dots, y_t) \in \mathbb{R}^{96}, \qquad
+\mathbf{y}_t = (y_{t+1}, \dots, y_{t+96}) \in \mathbb{R}^{96},
+\end{equation}
+其中 $y_t$ 为 $t$ 时刻的 OT。模型直接输出 96 步（direct multi-step），不做递归解码。
+
+\subsection{划分与评价}
+
+我们严格采用官方 12/4/4 划分：训练、验证、测试分别使用前 12、4、4 个“30 天月”，对应行索引 $[0,8640)$、$[8640,11520)$、$[11520,14400)$；验证/测试的输入窗口包含前一段末尾的 96 行 lookback，因此目标块仍为 2,880 行。标准协议只使用前 14,400 行，末尾 3,020 行不参与。测试集覆盖 2017-10-24 至 2018-02-20，\emph{只有冬季}，这是本文解释结果时必须考虑的背景。
+
+评价指标为反归一化后的 MSE 与 MAE。为便于比较，我们同时报告：
+\begin{itemize}
+\item \textbf{skill}：$\mathrm{skill}=1-\mathrm{MSE}_{\text{model}}/\mathrm{MSE}_{\text{base}}$（或 MAE 版本），基线与 B1（最后值）或 B2b（最近 96~h 均值）比较；
+\item \textbf{bias}：预测误差的均值，用于诊断水平漂移；
+\item \textbf{步内去偏误差}：先减去每个预测步的均值误差，再计算 MSE/MAE，用于区分“水平错误”与“形状错误”；
+\item \textbf{block bootstrap}：以 96 为块长、2,000 次重采样，报告配对 MAE/MSE 差的 95\% 置信区间与逐窗口胜率。
+\end{itemize}
+
+神经网络均使用 3 个随机种子（0/1/2），报告均值与标准差；线性模型的 alpha 与神经网络的早停轮次均在验证集上选择，测试集不参与模型选择。实验在单张 RTX 5090 Laptop GPU（24~GB）上完成，PyTorch 2.14.1，CUDA 13.0。
+
+\section{方法}
+
+\subsection{局部水平锚定的线性预测器}
+
+整体流程如图~\ref{fig:pipeline} 所示。设输入窗口为 $\mathbf{x}_t=(y_{t-95},\dots,y_t)$，目标为 $\mathbf{y}_t=(y_{t+1},\dots,y_{t+96})$。定义最近 24~h 的局部水平
+\begin{equation}
+\ell_t=\frac{1}{24}\sum_{i=0}^{23} y_{t-i}.
+\end{equation}
+将输入与目标同时中心化：
+\begin{equation}
+\mathbf{x}'_t=\mathbf{x}_t-\ell_t\mathbf{1}, \qquad
+\mathbf{y}'_t=\mathbf{y}_t-\ell_t\mathbf{1}.
+\end{equation}
+在中心化空间训练 Ridge 回归：
+\begin{equation}
+\hat{\mathbf{y}}'_t = \mathbf{W}\mathbf{x}'_t+\mathbf{b},
+\qquad
+\hat{\mathbf{y}}_t=\hat{\mathbf{y}}'_t+\ell_t.
+\end{equation}
+输入按滞后维标准化、目标按预测步标准化，标准化统计量只在训练集拟合；正则化强度 $\alpha\in\{0.1,1,10,100,1000\}$ 由验证集 MAE 选择。该模型有两个关键性质：
+\begin{enumerate}
+\item \textbf{平移等变}：若输入与目标同时平移 $c$，即 $\mathbf{x}\to\mathbf{x}+c$、$\mathbf{y}\to\mathbf{y}+c$，则 $\ell_t\to\ell_t+c$、$\mathbf{x}'\to\mathbf{x}'$，从而 $\hat{\mathbf{y}}\to\hat{\mathbf{y}}+c$。模型无需重新学习绝对温度水平。
+\item \textbf{零系数极限是 B2a}：当 $\mathbf{W}=0,\mathbf{b}=0$ 时，$\hat{\mathbf{y}}_t=\ell_t\mathbf{1}$，即“最近 24~h 均值”基线。因此 Anchored Ridge 是在强基线之上的安全修正，而不是一个可能显著劣于基线的黑箱。
+\end{enumerate}
+本文的“锚定”是一种轻量、无参数的实例级水平处理；它与 RevIN 的“减均值、除标准差”思路相近，但只去除水平、不缩放方差，更适合 S 模式下 OT 的缓慢热惯性\cite{revin2022}。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/fig1_pipeline.pdf}
+\caption{Anchored Ridge 的预测流程。输入窗口先由最近 24~h 的均值给出局部水平 $\ell_t$，输入与目标同时中心化后由 Ridge 直接输出 96 步，最后加回 $\ell_t$。该结构对输入/目标的共同平移严格等变。}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{统计基线}
+
+B1（persistence）用最后观测值重复 96 步；B2a 用最近 24~h 均值重复 96 步；B2b 用最近 96~h 均值重复 96 步；B3（seasonal naive）重复最后 24~h 的模式。B2a 是 Anchored Ridge 的零系数极限；B2b 是长 horizon 下最强的局部水平基线。
+
+\subsection{神经对照模型}
+
+为覆盖主要模型家族，我们比较：MLP（96--128--128--96，ReLU）、GRU（hidden 64）、LSTM（hidden 64）、DLinear（kernel 25 的移动平均分解 + 两个线性头）、PatchTST（patch 16/stride 8、d\_model 16、4 heads、3 层）与 SegRNN（seg\_len 48、7 个历史 segment、2 个预测 segment、GRU、parallel multi-step）。每个模型都有 \emph{plain}（直接预测绝对 OT）与 \emph{anchored}（使用式 (2)--(3)）两个版本；plain 版本用于检验“不做水平处理时复杂度是否仍有用”，anchored 版本用于与 Anchored Ridge 公平比较。所有神经网络使用 MSE 损失、Adam（学习率 $10^{-3}$、权重衰减 $10^{-4}$）、batch 256、梯度裁剪 1.0、验证集 MAE 早停（patience 20，最多 300 epoch），并训练 3 个种子。
+
+\subsection{评价逻辑}
+
+本文的核心不是“哪个模型在排行榜上高一位”，而是三个可检验的问题：
+\begin{enumerate}
+\item \textbf{水平处理}是否解释了复杂模型与简单模型的主要差异？
+\item 在锚定之后，\textbf{模型复杂度}是否仍带来稳定增益？
+\item \textbf{负载输入、历史长度与自注意力}是否提供了独立于锚定的增量信息？
+\end{enumerate}
+我们通过 bias/去偏误差、跨 horizon 的 skill、S vs MS、L=96 vs L=336、Attention vs token mixing 等对照逐一回答。
+
+\section{实验结果与分析}
+
+\subsection{S 模式 96$\to$96：复杂度阶梯}
+
+表~\ref{tab:main} 给出 S 模式 96$\to$96 的主要结果。统计基线中，B2b 最强（MAE 1.821），但仍明显弱于线性模型。\textbf{Anchored Ridge 取得最低 MAE（1.632）与最低 MSE（4.613）}；Anchored DLinear（1.635）、PatchTST small（1.644）、Anchored MLP（1.663）与 Anchored GRU（1.671）紧随其后，差距均在 0.04~℃ 以内。
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\caption{S 模式 96$\to$96 的主要结果。MSE/MAE 单位为 ℃$^2$/℃；神经模型为 3 个种子的均值；bias 为预测误差均值；“—”表示该基线未单独统计 bias。}
+\label{tab:main}
+\begin{tabular}{lccc}
+\toprule
+模型 & MSE & MAE & bias \\
+\midrule
+B1 persistence & 5.833 & 1.865 & +0.122 \\
+B2a local mean 24 & 5.454 & 1.820 & +0.144 \\
+B2b local mean 96 & 5.617 & 1.821 & — \\
+\midrule
+Plain Ridge & 5.107 & 1.670 & +0.781 \\
+\textbf{Anchored Ridge} & \textbf{4.613} & \textbf{1.632} & +0.105 \\
+Plain MLP & 12.198 & 2.853 & +2.678 \\
+Anchored MLP & 4.680 & 1.663 & $-$0.034 \\
+Plain GRU & 17.878 & 3.532 & +3.331 \\
+Anchored GRU & 4.776 & 1.671 & $-$0.030 \\
+Plain LSTM & 18.243 & 3.565 & +3.339 \\
+Anchored LSTM & 5.077 & 1.759 & $-$0.202 \\
+Plain DLinear & 6.225 & 1.843 & +1.264 \\
+Anchored DLinear & 4.616 & 1.635 & +0.093 \\
+PatchTST small (anchored) & 4.842 & 1.644 & +0.301 \\
+SegRNN last-value & 4.614 & 1.694 & $-$0.415 \\
+No-Attention (token mixing) & 4.709 & 1.684 & $-$0.010 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/fig2_main.pdf}
+\caption{(a) 锚定模型的测试 MAE；虚线为 B2b 局部水平基线。(b) plain 与 anchored 版本的总体 bias；水平锚定几乎消除了所有家族的正偏差。}
+\label{fig:main}
+\end{figure}
+
+图~\ref{fig:main}a 将锚定模型按 MAE 排列。可以看到，模型家族之间的差距远小于“是否锚定”带来的差距：plain MLP/GRU/LSTM 的 MAE 分别为 2.853/3.532/3.565，远差于 B2b；加上锚定后分别降到 1.663/1.671/1.759，立刻回到 Anchored Ridge 附近。这一模式在 DLinear 与 PatchTST 上同样成立。可见，\emph{在 ETTh1 的 S 模式下，水平处理比模型结构更重要}。
+
+\subsection{为什么锚定有效：偏差与形状}
+
+图~\ref{fig:main}b 给出 plain 与 anchored 版本的总体 bias。plain MLP/GRU/LSTM 的 bias 分别达到 +2.68/+3.33/+3.34~℃，plain DLinear 与 plain PatchTST 也有 +1.26/+2.33~℃；这意味着它们在冬季测试集上系统性高估。原因是训练集 OT 均值为 17.13~℃，而测试集只有 4.85~℃；不做水平处理的模型会把训练段的绝对水平带入测试段。锚定后，各家族的 bias 降到 $-$0.20 至 +0.11~℃，其中 Anchored Ridge 为 +0.105~℃，Anchored DLinear 为 +0.093~℃。
+
+去偏误差进一步支持这一解释：plain DLinear 的步内去偏 MSE 为 4.307，其实优于 plain Ridge 的 4.400，说明趋势分解确实改善了“形状”；但其 bias 为 +1.264，导致原始 MSE 仍高达 6.225。Anchored DLinear 修掉水平后，原始 MSE 降到 4.616，与 Anchored Ridge 的 4.613 基本一致。换言之，\textbf{DLinear 的 trend 分解与 24~h 水平锚定在功能上是替代关系，而非互补关系}：两者都在处理水平/趋势，锚定之后分解的增量价值消失。
+
+Anchored Ridge 对 B2a 的配对 MAE 差为 $-0.187$~℃（95\% CI $[-0.294,-0.072]$），MSE 差为 $-0.842$（$[-1.368,-0.252]$），逐窗口胜率 62.3\%；相对 B2b 的 MAE 优势为 0.189~℃（skill 10.4\%）。这些差异虽不算大，但在 2,785 个测试窗口上稳定存在。
+
+\subsection{预测长度：误差饱和与局部水平基线}
+
+表~\ref{tab:horizon} 与图~\ref{fig:horizon} 给出 Anchored Ridge 在 H=96/192/336/720 上的表现。绝对误差从 96 步的 1.632~℃ 上升到 336 步的 2.129~℃，随后在 720 步反而略降到 2.116~℃；相对 B2b 的 MAE skill 则从 10.4\% 降到 6.4\%，再在 720 步回升到 11.7\%。这一非单调现象并非模型在 720 步突然变强，而是因为：
+\begin{itemize}
+\item Anchored Ridge 的绝对误差在 336 步后饱和；
+\item B2b（最近 96~h 均值）在 30 天 horizon 上明显变旧，bias 从 0.55~℃ 增至 1.37~℃；
+\item 因此相对 skill 回升。
+\end{itemize}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Anchored Ridge 的跨 horizon 结果。MAE/MSE 单位为 ℃/℃$^2$；skill 为相对 B2b 的 MAE 提升。}
+\label{tab:horizon}
+\begin{tabular}{rcccccc}
+\toprule
+Horizon & Ridge MSE & Ridge MAE & B1 MAE & B2b MAE & MAE skill & MSE skill \\
+\midrule
+96  & 4.613 & 1.632 & 1.865 & 1.821 & 10.37\% & 17.88\% \\
+192 & 6.178 & 1.914 & 2.163 & 2.063 & 7.23\%  & 12.08\% \\
+336 & 7.310 & 2.129 & 2.434 & 2.275 & 6.43\%  & 11.02\% \\
+720 & 7.092 & 2.116 & 2.601 & 2.395 & 11.65\% & 22.93\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/fig3_horizon.pdf}
+\caption{(a) Anchored Ridge 与 B1/B2b 的测试 MAE 随 horizon 的变化；(b) 相对 B2b 的 MAE skill。误差在 336 步后饱和，而局部水平基线继续变差，导致 720 步的相对 skill 回升。}
+\label{fig:horizon}
+\end{figure}
+
+分段分析显示，Ridge 相对 B2b 的优势高度集中在 1--24 步：在 H=336 上，1--24 步的 MAE skill 为 31.2\%，25--336 步只有约 5\%；在 H=720 上，1--24 步为 29.4\%，337--720 步回升到 15.0\%，因为基线的水平已经过期。换句话说，\emph{Anchored Ridge 的主要价值是“把当前水平校准好，并对未来几天给出温和修正”}；超过约 96~h 后，B2b 已经捕获了大部分可预测信号。
+
+\subsection{消融：负载、历史长度与注意力}
+
+表~\ref{tab:ablation} 与图~\ref{fig:ablations} 汇总了三组消融。
+
+\begin{table}[t]
+\centering
+\small
+\caption{关键消融。除特别说明外均为 S 模式 96$\to$96；数值为测试 MAE（℃）。}
+\label{tab:ablation}
+\begin{tabular}{llcc}
+\toprule
+实验 & 设置 & MAE & 对照 MAE \\
+\midrule
+负载输入 & S (OT only) & 1.633 & — \\
+         & MS (7 channels) & 1.795 & 1.633 \\
+\addlinespace
+历史长度 & Ridge, L=96 & 1.632 & — \\
+         & Ridge, L=336 & 1.625 & 1.632 \\
+         & PatchTST, L=96 & 1.644 & — \\
+         & PatchTST, L=336 & 1.758 & 1.644 \\
+\addlinespace
+注意力 & Attention (mean / ensemble) & 1.644 / 1.600 & — \\
+       & Token mixing (mean / ensemble) & 1.684 / 1.660 & 1.644 / 1.600 \\
+\addlinespace
+趋势分解 & DLinear plain & 1.843 & — \\
+         & DLinear anchored & 1.635 & 1.632 (Ridge) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{figures/fig4_ablations.pdf}
+\caption{四组消融：(a) 加入 6 个负载通道（MS）反而变差；(b) 更长历史对 Ridge 只有微小改善，对 PatchTST 反而变差；(c) 用参数匹配的 token-mixing MLP 替换自注意力，性能没有明显下降；(d) DLinear 的趋势分解只有在水平锚定后才能追平 Anchored Ridge。}
+\label{fig:ablations}
+\end{figure}
+
+\textbf{负载输入。}将输入从 96 个 OT 扩展为 96$\times$7 的负荷+OT 后，MS 的 MAE 从 1.633 升到 1.795，MSE 从 4.614 升到 5.412，配对 MAE 差为 +0.163（95\% CI $[+0.113,+0.226]$），逐窗口胜率仅 27.9\%。MS 模型确实给 HULL/MULL 等通道分配了非零系数，但性能没有提升，说明这些关系不迁移；这与 EDA 中“负荷–OT 相关跨期变号、HUFL–MUFL 与 HULL–MULL 强共线”的观察一致。负载通道不是“越多越好”的信息源。
+
+\textbf{历史长度。}将输入从 96~h 延长到 336~h：Anchored Ridge 的 MAE 从 1.632 微降到 1.625，MSE 从 4.613 降到 4.468，配对 CI 仍跨 0，胜率 49.6\%，只是很小的、不显著的改善；而 PatchTST 的 MAE 从 1.644 升到 1.758，MSE 从 4.842 升到 4.996，且 336~h 版本在 epoch 1 就早停——额外历史带来的是更大的 head 与更严重的过拟合，而不是更多可用信号。
+
+\textbf{注意力。}用一个参数量接近的 token-mixing MLP（24,193 vs 24,112 参数）替换自注意力，MAE 从 1.644 变为 1.684（mean）、从 1.600 变为 1.660（ensemble），MSE 反而略好；配对 MAE 差 +0.059（CI $[-0.041,+0.142]$），胜率 44.6\%。没有证据表明自注意力在该任务中不可替代；token mixing 甚至更稳定（seed 标准差更小）。
+
+\subsection{最终方案}
+
+综合以上结果，本文推荐的 OT 预测方案是\textbf{Anchored Ridge}：
+\begin{enumerate}
+\item 取最近 96~h 的 OT 作为输入，最近 24~h 的均值作为局部水平 $\ell_t$；
+\item 对输入与目标同时减去 $\ell_t$，按滞后/预测步用训练集统计量标准化；
+\item 在训练集上拟合多输出 Ridge，$\alpha=100$（验证集 MAE 选择），直接输出 96 步；
+\item 预测时加回 $\ell_t$；若需 192/336/720 步，仅调整输出层并重新拟合，锚定与标准化流程不变。
+\end{enumerate}
+该方案在 96/192/336/720 步上的 MAE 分别为 1.632/1.914/2.129/2.116~℃，均优于 B1 与 B2b；在 96 步上比最强的神经模型（PatchTST small，1.644）低约 0.012~℃，且参数量与推理成本低一个数量级。它不需要 GPU，不需要早停与随机种子，部署时只需保存 $\mathbf{W}$、$\mathbf{b}$、标准化统计量与 24~h 均值。对于“只有 OT 历史”的场景，这是一个稳健、可解释、易维护的默认方案。
+
+\section{讨论}
+
+\subsection{为什么复杂度没有带来收益}
+
+本文的结果可以由三个因素解释。第一，\textbf{水平漂移主导误差}：训练集 OT 均值 17.13~℃，测试集 4.85~℃，且测试集只有冬季；不做水平处理的模型会把训练段的绝对水平带入测试段，产生 0.78--3.34~℃ 的偏差。这个偏差远大于模型结构带来的差异。第二，\textbf{S 模式的可学信号有限}：OT 的年周期解释 81\% 的方差，日周期只再解释 5.7\%，周周期 2.3\%；在只有 OT 历史的情况下，模型能学到的“形状”信息本就不多，复杂结构的边际收益很容易被噪声与过拟合抵消。第三，\textbf{数据规模小}：训练集只有 8,449 个 96~h 窗口；PatchTST 等模型在 1--10 个 epoch 内就开始过拟合，参数量更大的模型反而更脆弱。
+
+这也解释了为什么 DLinear 的趋势分解与 24~h 锚定是替代关系：两者都在处理水平/趋势；锚定把水平拿掉后，分解的增量价值消失。同理，负载输入的 MS 实验没有带来增益，因为负荷–OT 的相关性跨期不稳定，模型学到的更多是季节混杂而非可迁移的因果信号。注意力消融则说明，在当前小模型与低信号任务上，token mixing 足以达到与自注意力相当的性能。
+
+\subsection{与已有工作的关系}
+
+本文的结论与 DLinear 的“简单线性模型可以很强”一致\cite{dlinear2023}，但进一步指出：在 ETTh1 的 S 模式下，\emph{线性模型之所以强，很大程度上是因为它更容易与水平锚定结合}；plain Ridge 的 MAE 仍有 1.670，而 Anchored Ridge 降到 1.632。与 RevIN 的实例归一化相比\cite{revin2022}，24~h 均值锚定更轻量，只处理水平、不处理方差；在 OT 这种热惯性强的序列上已经足够。与 PatchTST 的通道独立策略相比\cite{patchtst2023,ci2023}，本文的 S 模式可以看作其单变量极限；我们的结果表明，通道独立的价值在 ETTh1 上主要体现在“避免负载噪声”，而不是“让 Transformer 更强”。SegRNN 的 last-value 归一化优于我们移植的 24~h 锚定，也说明归一化方式与网络结构存在交互，不能简单地把线性模型的锚定直接搬到所有模型上\cite{segrnn2023}。TiDE、TSMixer、N-HiTS 等简单/稠密模型在其它基准上的成功\cite{tide2023,tsmixer2023,nhits2023}，与本文“复杂度不是关键”的判断方向一致。
+
+\subsection{局限与有效性威胁}
+
+本文有三类局限。第一，\textbf{单一数据集、单一划分}：所有结论基于 ETTh1 与官方 12/4/4；测试集只有冬季，无法代表全年。第二，\textbf{外生变量缺失}：我们没有环境温度/天气数据；OT 的主要驱动因素可能不在数据集中，因此绝对误差（约 1.6--2.1~℃）不能完全归因于模型。第三，\textbf{神经模型未穷尽调参}：我们采用统一、轻量的配置与早停，未对每个模型做大规模超参搜索；更大的模型或不同的正则化可能改变小数点后的排序。此外，ETTh1 存在月末冻结、2016-12 负荷停机等采集伪影；本文未做掩码，但这些伪影在 S 模式的 OT 序列上主要影响少量窗口，且不改变“锚定优于不锚定、简单优于复杂”的主要结论。最后，本文只做点预测，未评估区间/概率预测；长 horizon 的不确定性可能比点误差的微小差异更重要。
+
+\section{结论}
+
+本文以 ETTh1 油温预测为对象，在 S 模式与官方 12/4/4 划分下系统比较了统计基线、线性模型、MLP、GRU、LSTM、DLinear、PatchTST 与 SegRNN 等十余种方法，并考察了预测长度、负载输入、历史长度与自注意力的影响。结果表明：不进行水平处理时，复杂模型会因分布漂移产生严重偏差，甚至劣于简单基线；引入最近 24~h 均值锚定后，各模型收敛到相近水平，简单的 Anchored Ridge 在 96/192/336/720 步上均保持最优或并列最优（MAE 1.632/1.914/2.129/2.116~℃）。负载输入、更长历史与自注意力均未带来稳定增益；远期误差在 336 步后饱和，局部水平基线成为强对照。本文最终给出一个简单、可解释、易部署的 OT 预测方案，并说明在 ETTh1 上“更复杂”并不等于“更准确”。未来工作将引入环境温度等外生变量，并在概率预测与更多数据集上检验本文结论的外部有效性。
+
+\bibliography{references}
+
+\end{document}
