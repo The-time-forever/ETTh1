@@ -1,17 +1,29 @@
-# 论文构建与本轮修改
+# 越复杂越好？
 
-主文件为 `main.tex`，阅读稿为 `main.pdf`。本轮依据 Git 中的数据检查、基线、各模型与消融实验记录扩写，保留原始 CSV 和训练结果。
+阅读稿为 `main.pdf`，LaTeX 主文件为 `main.tex`。论文以单变量 S 模式的油温预测为研究对象，最终采用 96 h OT 历史、24 h 局部均值与多输出岭回归。当前阅读稿为 18 页。
 
-## 修改内容
+## 内容安排
 
-- 正文与图表使用“最后值”“24 h 均值”“96 h 均值”等规则名称，清理 B1/B2a/B2b、plain、small 等开发简称。S/MS 等预测任务缩写在首次出现处定义；复现路径保留在附录。
-- 方法部分补充窗口构造、训练尺度、岭回归目标函数、GRU/LSTM 状态更新、DLinear 分解、PatchTST 张量尺寸与编码块、片段混合 MLP、SegRNN 共享 GRU 和并行预测过程。
-- 区分 64 维两层与 16 维三层 PatchTST，列出实际参数量；区分三种子指标均值与预测集成。
-- 重绘四幅旧图，新增数据划分图和 PatchTST/SegRNN 结构图。结果比较采用点和标准差，避免截断柱形夸大差异。长预测使用共同起点曲线，并补充逐预测步曲线。
-- 修正 96 h Ridge 的目标标准化说明、最强统计基线、参数量比例、第 1 轮取得最优参数与实际停止训练的区别。
-- 删除“零系数保证安全修正”“Ridge 始终最优”“远期误差饱和”等超出现有结果的判断。明确长历史容量变化、伪影敏感性尚待计算及长预测对照范围。
+1. 引言：油温预测需求 → ETT 与 S 模式 → 单变量和线性预测文献 → 当前方案及研究工作。
+2. 相关工作：单变量油温、线性预测与参考水平恢复、预测结构。
+3. 数据与任务：时间划分、窗口、尺度、训练和评价。
+4. 油温预测模型：局部水平、线性映射及对照设计。
+5. 实验结果：围绕最终方案比较温度误差、历史和输入选择。
+6. 最终方案：选择依据、参数、从历史到未来的计算、预测曲线、与前人工作的联系及适用条件。
+7. 结论。
+8. 学术附录：保留 MLP、GRU/LSTM、DLinear、PatchTST、片段交互替换、SegRNN 的公式和结构细节。
 
-语言使用 `D:\Document\Memory\chinese-writing\SKILL.md`。直接陈述模型、处理过程和结果，统一术语，缩短长句，清理假想反驳与开发过程用语。检查器为 0 ERROR、3 WARN；三项均为 192/336/720 等任务长度的必要重复。正文的开发代号已清理；英文摘要保留常用术语 anchored，附录保留实际路径。
+脚本、路径、来源清单与构建命令在此说明，论文中保留与研究方法有关的定义、公式和配置。
+
+## 文献与写作依据
+
+- Informer 官方实现明确 S/MS 的输入输出任务定义。
+- DLinear 论文附录 C.1 给出 ETT 单变量比较及分布变化的讨论；NLinear 提供参考水平恢复的直接先例。
+- PatchTST 附录 A.3 明确以 ETT 油温作为单变量预测目标。
+- Han 等的通道独立研究用于解释独立建模的相关背景；正文区分单一 OT 输入与多通道共享参数。
+- 语言遵循 `C:\Users\Adam\.codex\skills\chinese-writing\SKILL.md`；结构参考用户提供的 [Academic Writing Suite](https://github.com/The-time-forever/academic-writing-suite) 及本机 ML 论文写作技能。
+
+具体来源与核验说明见 `outputs/paper/revision_sources.md`。
 
 ## 构建
 
@@ -24,19 +36,12 @@ latexmk -norc -xelatex -interaction=nonstopmode -halt-on-error main.tex
 Pop-Location
 ```
 
-图表脚本读取保存的 CSV，核验原始 CSV SHA256，在 `outputs/paper/` 写入图、数据来源清单，并同步论文使用的图和两个主结果表到 `paper/figures/`、`paper/tables/`。该过程不启动训练。图片数据源以 `outputs/paper/source_manifest.json` 为准；其余数值说明参见各实验目录的 `summary.json`、`seed_metrics.csv`、`paired_deltas.csv` 及实验脚本。
+图表脚本读取已保存的结果，核验原始 CSV SHA256，生成七幅图及两个主结果表。为绘制最终预测曲线，它按原验证集选择的 `alpha=100` 重建既有线性预测器，断言其全测试集 MSE/MAE 与原结果一致；该步骤不启动神经网络训练，不进行新的模型搜索。
 
-## 检查
+输入文件校验值见 `outputs/paper/source_manifest.json`，预测重建结果见 `outputs/paper/solution_verification.json`。曲线的两个首个目标时刻固定为 2017-11-06 与 2018-01-06 的 00:00，按日历指定，未按误差筛选。
 
-- 原始数据 SHA256 与项目记录一致。
-- XeLaTeX/BibTeX 构建通过，阅读稿为 15 页；最终日志无未定义引用、Overfull 或 Underfull 提示。
-- 已将 PDF 全页栅格化检查，重点核对公式、结构图、主结果表及附录路径换行。
-- `outputs/paper/language_check.json` 保存语言检查结果；`git diff --check` 用于检查补丁空白问题。
+## 验证与字体
 
-原稿与各轮实验历史保留在 Git 中，可通过 `0999185` 比较本轮论文修改。
+XeLaTeX/BibTeX 编译及全页渲染检查通过，日志无溢出或未定义引用。补充语言检查器结果为 0 ERROR、3 WARN，三项为 192/336/720 等任务长度的必要重复，见 `outputs/paper/language_check.json`。
 
-## 中文预览字体
-
-本稿采用 `fontset=windows`，与可在内置预览中正常显示的花卉分类论文相同。对比发现，原 Fandol 中文字体的 `pdffonts` 检查为 `CID Type 0C`、`emb=yes`、`uni=no`；花卉论文使用的宋体、黑体为 `CID TrueType`、`emb=yes`、`uni=yes`。
-
-切换后，本稿宋体、黑体和楷体均已嵌入并带 Unicode 映射。重新编译后保持 15 页，日志无溢出和未定义引用。本地渲染检查通过；内置预览的显示结果需以重新打开文件后的实际页面为准。
+采用 `fontset=windows`，宋体、黑体和楷体已嵌入且带 Unicode 映射，与内置预览正常的花卉论文保持相同字体设置。

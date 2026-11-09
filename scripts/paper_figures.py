@@ -164,9 +164,57 @@ def tables():
         lines.append(f'{h} & {2881-h} & {r.mse:.3f} & {r.mae:.3f} & {b.mae:.3f} & {100*(1-r.mae/b.mae):.2f}\\% \\\\')
     (TAB/'horizon_rows.tex').write_text('\n'.join(lines)+'\n\\bottomrule\n',encoding='utf-8')
 
+def solution_forecasts():
+    """Reconstruct the selected linear predictor and verify saved test metrics."""
+    from sklearn.linear_model import Ridge
+    from sklearn.preprocessing import StandardScaler
+    source = ROOT / 'outputs/splits/windows_L96.npz'
+    SOURCES.add(source)
+    with np.load(source) as windows:
+        d = pd.read_csv(ROOT/'ETTh1.csv', parse_dates=['date'])
+        ot = d.OT.to_numpy(dtype=float)
+        def xy(split):
+            starts = windows[f'{split}_96_x_start'].astype(int)
+            targets = windows[f'{split}_96_y_start'].astype(int)
+            return (np.stack([ot[i:i+96] for i in starts]),
+                    np.stack([ot[i:i+96] for i in targets]), targets)
+        xtr,ytr,_=xy('train'); xte,yte,starts=xy('test')
+    levels_tr=xtr[:,-24:].mean(axis=1)
+    levels_te=xte[:,-24:].mean(axis=1)
+    grid=read('ridge_level/alpha_selection.csv')
+    selected=grid[(grid['variant']=='anchored') & (grid.split=='val')].sort_values('mae').iloc[0]
+    scaler=StandardScaler().fit(xtr-levels_tr[:,None])
+    model=Ridge(alpha=float(selected.alpha),fit_intercept=True)
+    model.fit(scaler.transform(xtr-levels_tr[:,None]),ytr-levels_tr[:,None])
+    pred=model.predict(scaler.transform(xte-levels_te[:,None]))+levels_te[:,None]
+    mse=float(np.mean((pred-yte)**2)); mae=float(np.mean(np.abs(pred-yte)))
+    expected=row('ridge_level','Anchored Ridge')
+    np.testing.assert_allclose([mse,mae],[expected.mse,expected.mae],rtol=1e-10)
+    # Calendar-fixed examples: these dates were specified before inspecting errors.
+    dates=['2017-11-06 00:00:00','2018-01-06 00:00:00']
+    f,axes=plt.subplots(2,1,figsize=(10,6),layout='constrained')
+    records=[]
+    for a,date,letter in zip(axes,dates,'ab'):
+        target=int(np.flatnonzero(d.date==pd.Timestamp(date))[0])
+        k=int(np.flatnonzero(starts==target)[0])
+        a.plot(np.arange(-95,1),xte[k],color='#555555',lw=1,label='历史观测')
+        a.plot(np.arange(1,97),yte[k],color='#222222',lw=1.4,label='未来真实油温')
+        a.plot(np.arange(1,97),pred[k],color=C[0],lw=1.5,label='锚定岭回归预测')
+        a.plot([1,96],[levels_te[k]]*2,color=C[2],ls='--',lw=1,label='24 h 均值预测')
+        a.axvline(0,color=C[4],ls=':',lw=1)
+        a.set(xlabel='相对预测起点的时间（h）',ylabel='油温（℃）',
+              title=f'({letter}) 首个预测时刻：{date[:10]} 00:00',xlim=(-95,96))
+        a.grid(alpha=.15); a.legend(frameon=False,ncol=2,fontsize=8,loc='best')
+        records.append({'first_target':date,'mae':float(np.mean(np.abs(pred[k]-yte[k]))),
+                        'anchor':float(levels_te[k])})
+    save(f,'fig6_solution_forecasts')
+    result={'alpha':float(selected.alpha),'verified_test_mse':mse,'verified_test_mae':mae,
+            'example_selection':'fixed calendar dates, no error-based selection', 'examples':records}
+    (OUT/'solution_verification.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
 if __name__=='__main__':
     assert hashlib.sha256((ROOT/'ETTh1.csv').read_bytes()).hexdigest() == 'f18de3ad269cef59bb07b5438d79bb3042d3be49bdeecf01c1cd6d29695ee066'
-    pipeline(); data_split(); architectures(); main_results(); horizons(); ablations(); tables()
+    pipeline(); data_split(); architectures(); main_results(); horizons(); ablations(); tables(); solution_forecasts()
     manifest={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(SOURCES)}
     (OUT/'source_manifest.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
-    print(f'Generated six figures and two tables from {len(SOURCES)} source files.')
+    print(f'Generated seven figures and two tables from {len(SOURCES)} source files; verified selected Ridge predictions.')

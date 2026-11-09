@@ -12,7 +12,9 @@
   "outputs\\mlp\\test_metrics.csv": "f40817b97f69e487438bdcb93726f492cbb79e2d64af22130772ca82903001c7",
   "outputs\\patchtst\\test_metrics.csv": "834e4c1ae980950c35e7dae1bdbed33cda3f28fca12d5b9505bccab0cdfef77b",
   "outputs\\patchtst_l336\\test_metrics.csv": "1c68b15efbef02ff96bc2890d6da23a834d86b8e39d64cd89d43509859d67e06",
+  "outputs\\ridge_level\\alpha_selection.csv": "d4d563a081c5ed520ed8803c386cb7eb16e7cf693fe680714d18cc21e1103743",
   "outputs\\ridge_level\\test_metrics.csv": "1d12159c6e1a366b30f33e2d4a842a178b45bc8f6b2fe1296503deaa6cb2b35e",
   "outputs\\ridge_ms\\test_metrics.csv": "91636b712fdb18ebf99ec1be482f907ce55e1c3b2a91c04271320cab44b01d2b",
-  "outputs\\segrnn\\test_metrics.csv": "6d5cc31d35d38079dc8e5d34f62955363b256dd5d01aa7793bbd31b07c6edac6"
+  "outputs\\segrnn\\test_metrics.csv": "6d5cc31d35d38079dc8e5d34f62955363b256dd5d01aa7793bbd31b07c6edac6",
+  "outputs\\splits\\windows_L96.npz": "4025530862d8b6cbd30cbadd0baf67f963ed348bab04103695ad91e95102dcf1"
 }

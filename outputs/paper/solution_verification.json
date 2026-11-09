@@ -1,0 +1,18 @@
+{
+  "alpha": 100.0,
+  "verified_test_mse": 4.612680353051901,
+  "verified_test_mae": 1.632422411561528,
+  "example_selection": "fixed calendar dates, no error-based selection",
+  "examples": [
+    {
+      "first_target": "2017-11-06 00:00:00",
+      "mae": 1.7878142608391474,
+      "anchor": 7.072833339373271
+    },
+    {
+      "first_target": "2018-01-06 00:00:00",
+      "mae": 1.3778240703489313,
+      "anchor": 1.5095833465456963
+    }
+  ]
+}
