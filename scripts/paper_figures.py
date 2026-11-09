@@ -102,7 +102,7 @@ def architectures():
     save(f,'fig5_architectures')
 
 def main_results():
-    specs=[('ridge_level','Anchored Ridge','锚定 Ridge'),('dlinear','Anchored DLinear (3-seed mean)','锚定 DLinear'),('attn_ablation','Base PatchTST (3-seed mean)','PatchTST（16维）'),('patchtst','Anchored PatchTST (3-seed mean)','PatchTST（64维）'),('mlp','Anchored MLP (3-seed mean)','锚定 MLP'),('gru','Anchored GRU (3-seed mean)','锚定 GRU'),('attn_ablation','No-Attention PatchTST (3-seed mean)','片段混合 MLP'),('lstm','Anchored LSTM (3-seed mean)','锚定 LSTM')]
+    specs=[('ridge_level','Anchored Ridge','Anchored Ridge'),('dlinear','Anchored DLinear (3-seed mean)','锚定 DLinear'),('attn_ablation','Base PatchTST (3-seed mean)','PatchTST（16维）'),('patchtst','Anchored PatchTST (3-seed mean)','PatchTST（64维）'),('mlp','Anchored MLP (3-seed mean)','锚定 MLP'),('gru','Anchored GRU (3-seed mean)','锚定 GRU'),('attn_ablation','No-Attention PatchTST (3-seed mean)','片段混合 MLP'),('lstm','Anchored LSTM (3-seed mean)','锚定 LSTM')]
     vals=[row(d,m) for d,m,_ in specs]
     f,axes=plt.subplots(1,2,figsize=(10,4.4),layout='constrained')
     a=axes[0]; y=np.arange(len(vals))
@@ -126,10 +126,10 @@ def horizons():
     d=read('h720/fixed_origin_skill.csv'); step=read('h720/per_step_metrics.csv')
     f,axes=plt.subplots(1,2,figsize=(10,3.7),layout='constrained')
     a=axes[0]
-    for col,label,color in [('ridge_mae','锚定 Ridge',C[0]),('b2b_mae','96 h 均值',C[2])]: a.plot(d.horizon,d[col],'o-',label=label,color=color)
+    for col,label,color in [('ridge_mae','Anchored Ridge',C[0]),('b2b_mae','96 h 均值',C[2])]: a.plot(d.horizon,d[col],'o-',label=label,color=color)
     a.set(xticks=d.horizon,xlabel='预测长度 H（h）',ylabel='测试 MAE（℃）',title='(a) 固定 2,161 个共同预测起点'); a.legend(frameon=False)
     a=axes[1]
-    for col,label,color in [('Anchored Ridge_mae','锚定 Ridge',C[0]),('B2b_mae','96 h 均值',C[2]),('B1_mae','最后值',C[4])]: a.plot(step.step,step[col],label=label,color=color,lw=1)
+    for col,label,color in [('Anchored Ridge_mae','Anchored Ridge',C[0]),('B2b_mae','96 h 均值',C[2]),('B1_mae','最后值',C[4])]: a.plot(step.step,step[col],label=label,color=color,lw=1)
     a.set(xlabel='预测步 h（h）',ylabel='逐步 MAE（℃）',title='(b) 720 h 模型的逐预测步误差'); a.legend(frameon=False,fontsize=8)
     save(f,'fig3_horizon')
 
@@ -149,7 +149,7 @@ def ablations():
     save(f,'fig4_ablations')
 
 def tables():
-    entries=[('ridge_level','Plain Ridge','Ridge（绝对值）'),('ridge_level','Anchored Ridge','Ridge（锚定）'),('mlp','Plain MLP (3-seed mean)','MLP（绝对值）'),('mlp','Anchored MLP (3-seed mean)','MLP（锚定）'),('gru','Plain GRU (3-seed mean)','GRU（绝对值）'),('gru','Anchored GRU (3-seed mean)','GRU（锚定）'),('lstm','Plain LSTM (3-seed mean)','LSTM（绝对值）'),('lstm','Anchored LSTM (3-seed mean)','LSTM（锚定）'),('dlinear','Plain DLinear (3-seed mean)','DLinear（绝对值）'),('dlinear','Anchored DLinear (3-seed mean)','DLinear（锚定）'),('patchtst','Plain PatchTST (3-seed mean)','PatchTST 64维（绝对值）'),('patchtst','Anchored PatchTST (3-seed mean)','PatchTST 64维（锚定）'),('attn_ablation','Base PatchTST (3-seed mean)','PatchTST 16维（锚定）'),('attn_ablation','No-Attention PatchTST (3-seed mean)','片段混合 MLP（锚定）')]
+    entries=[('ridge_level','Plain Ridge','Ridge（绝对值）'),('ridge_level','Anchored Ridge',r'\textbf{Anchored Ridge}'),('mlp','Plain MLP (3-seed mean)','MLP（绝对值）'),('mlp','Anchored MLP (3-seed mean)','MLP（锚定）'),('gru','Plain GRU (3-seed mean)','GRU（绝对值）'),('gru','Anchored GRU (3-seed mean)','GRU（锚定）'),('lstm','Plain LSTM (3-seed mean)','LSTM（绝对值）'),('lstm','Anchored LSTM (3-seed mean)','LSTM（锚定）'),('dlinear','Plain DLinear (3-seed mean)','DLinear（绝对值）'),('dlinear','Anchored DLinear (3-seed mean)','DLinear（锚定）'),('patchtst','Plain PatchTST (3-seed mean)','PatchTST 64维（绝对值）'),('patchtst','Anchored PatchTST (3-seed mean)','PatchTST 64维（锚定）'),('attn_ablation','Base PatchTST (3-seed mean)','PatchTST 16维（锚定）'),('attn_ablation','No-Attention PatchTST (3-seed mean)','片段混合 MLP（锚定）')]
     lines=[]
     for folder,model,label in entries:
         r=row(folder,model)
@@ -199,7 +199,7 @@ def solution_forecasts():
         k=int(np.flatnonzero(starts==target)[0])
         a.plot(np.arange(-95,1),xte[k],color='#555555',lw=1,label='历史观测')
         a.plot(np.arange(1,97),yte[k],color='#222222',lw=1.4,label='未来真实油温')
-        a.plot(np.arange(1,97),pred[k],color=C[0],lw=1.5,label='锚定岭回归预测')
+        a.plot(np.arange(1,97),pred[k],color=C[0],lw=1.5,label='Anchored Ridge')
         a.plot([1,96],[levels_te[k]]*2,color=C[2],ls='--',lw=1,label='24 h 均值预测')
         a.axvline(0,color=C[4],ls=':',lw=1)
         a.set(xlabel='相对预测起点的时间（h）',ylabel='油温（℃）',
