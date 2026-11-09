@@ -34,3 +34,9 @@ Pop-Location
 - `outputs/paper/language_check.json` 保存语言检查结果；`git diff --check` 用于检查补丁空白问题。
 
 原稿与各轮实验历史保留在 Git 中，可通过 `0999185` 比较本轮论文修改。
+
+## 中文预览字体
+
+本稿采用 `fontset=windows`，与可在内置预览中正常显示的花卉分类论文相同。对比发现，原 Fandol 中文字体的 `pdffonts` 检查为 `CID Type 0C`、`emb=yes`、`uni=no`；花卉论文使用的宋体、黑体为 `CID TrueType`、`emb=yes`、`uni=yes`。
+
+切换后，本稿宋体、黑体和楷体均已嵌入并带 Unicode 映射。重新编译后保持 15 页，日志无溢出和未定义引用。本地渲染检查通过；内置预览的显示结果需以重新打开文件后的实际页面为准。
