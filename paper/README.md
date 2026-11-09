@@ -1,10 +1,10 @@
 # 越复杂越好？
 
-阅读稿为 `main.pdf`，LaTeX 主文件为 `main.tex`。论文以单变量 S 模式的油温预测为研究对象，最终选用 Anchored Ridge（局部水平锚定岭回归），输入 96 h OT 历史，以 24 h 均值为参考。当前阅读稿为 19 页。
+阅读稿为 `main.pdf`，LaTeX 主文件为 `main.tex`。论文以单变量 S 模式的油温预测为研究对象，最终选用 Anchored Ridge（局部水平锚定岭回归），输入 96 h OT 历史，以 24 h 均值为参考。当前阅读稿为 20 页。
 
 ## 内容安排
 
-论文按照数据分析与处理、五个统计基线、线性模型构建与比较、非线性模型、实验结果、讨论及最终模型的顺序展开。对照模型的结构细节保留在学术附录。
+论文按照数据分析与处理、五个统计基线、从线性回归到局部水平锚定、非线性模型能否改善预测、讨论及最终模型的顺序展开。对照模型的结构细节保留在学术附录。
 
 ## 文献与写作依据
 
@@ -13,20 +13,11 @@
 - DLinear 论文附录 C.1 给出 ETT 单变量比较及分布变化的讨论；NLinear 提供参考水平恢复的直接先例。
 - PatchTST 附录 A.3 明确以 ETT 油温作为单变量预测目标。
 - Han 等的通道独立研究用于解释独立建模的相关背景；正文区分单一 OT 输入与多通道共享参数。
-- 语言遵循 `C:\Users\Adam\.codex\skills\chinese-writing\SKILL.md`；结构参考用户提供的 [Academic Writing Suite](https://github.com/The-time-forever/academic-writing-suite) 及本机 ML 论文写作技能。
+- 中文写作遵循学术写作规范；结构参考 [Academic Writing Suite](https://github.com/The-time-forever/academic-writing-suite)。
 
 具体来源与核验说明见 `outputs/paper/revision_sources.md`。
 
-## 构建
-
-在工作空间根目录运行：
-
-```powershell
-& "D:\SoftWare\Anaconda\envs\ml\python.exe" scripts\paper_figures.py
-Push-Location paper
-latexmk -norc -xelatex -interaction=nonstopmode -halt-on-error main.tex
-Pop-Location
-```
+## 图表与核验
 
 图表脚本读取已保存的结果，核验原始 CSV SHA256，生成七幅图及两个主结果表。为绘制最终预测曲线，它按原验证集选择的 `alpha=100` 重建既有线性预测器，断言其全测试集 MSE/MAE 与原结果一致；该步骤不启动神经网络训练，不进行新的模型搜索。
 
