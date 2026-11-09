@@ -1,8 +1,10 @@
 ---
-description: Commit the current experiment/step with a standard message
+description: Commit the current experiment/data/script step with a standard message (not for paper edits)
 ---
 
-提交当前这一轮实验/步骤（$ARGUMENTS）。
+提交当前这一轮实验/数据/脚本步骤（$ARGUMENTS）。
+
+**不要用它逐次提交论文修改。** `paper/**` 只在用户明确要求，或完成一个事先约定的阶段（初稿、投稿版等）时提交。
 
 1. 运行 `git status --short` 与 `git diff --stat`，确认本轮改动。
 2. 只 stage 本轮相关文件；不要 stage `__pycache__/`、`*.pyc`、临时文件、密钥、checkpoint。
