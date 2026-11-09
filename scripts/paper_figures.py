@@ -97,7 +97,7 @@ def architectures():
     for x,s in [(.11,'336 h 历史\n7 × 48 h'),(.37,'片段嵌入 + ReLU\n7 × 64'),(.63,'共享 GRU 编码\n最终状态 $h$')]: box(a,x,.64,.19,.25,s,size=9)
     arrow(a,(.22,.64),(.26,.64)); arrow(a,(.48,.64),(.52,.64))
     for y,j in [(.68,1),(.20,2)]: box(a,.88,y,.18,.23,f'输入 $p_{j}$；初态 $h$\n共享 GRU\n线性头 → 48 h',color='#FFF1DE',size=8.5)
-    arrow(a,(.74,.64),(.775,.68)); arrow(a,(.63,.50),(.63,.20)); arrow(a,(.63,.20),(.775,.20))
+    arrow(a,(.74,.68),(.775,.68)); arrow(a,(.63,.50),(.63,.20)); arrow(a,(.63,.20),(.775,.20))
     a.text(.14,.17,'两个输出片段拼接为 96 h；\n反标准化后加回参考水平。',fontsize=9)
     save(f,'fig5_architectures')
 
@@ -107,16 +107,16 @@ def main_results():
     f,axes=plt.subplots(1,2,figsize=(10,4.4),layout='constrained')
     a=axes[0]; y=np.arange(len(vals))
     a.errorbar([r.mae for r in vals],y,xerr=[r.get('mae_std',0) if pd.notna(r.get('mae_std',0)) else 0 for r in vals],fmt='o',capsize=3,color=C[0])
-    a.axvline(1.8198106968,ls='--',color=C[4],lw=1,label='24 h 均值')
+    a.axvline(1.8198106968,ls='--',color=C[4],lw=1,label='24 h 局部均值基线')
     a.set_yticks(y,[s[2] for s in specs]); a.invert_yaxis()
     a.set(xlim=(1.60,1.84),xlabel='测试 MAE（℃）',title='(a) 三种子指标均值 ± 标准差')
-    a.text(1.817,-.45,'24 h 均值',ha='right',fontsize=8,color=C[4])
+    a.text(1.817,-.45,'24 h 局部均值基线',ha='right',fontsize=8,color=C[4])
     a=axes[1]; families=['Ridge','MLP','GRU','LSTM','DLinear','PatchTST']
     plain=[row(d,m) for d,m in [('ridge_level','Plain Ridge'),('mlp','Plain MLP (3-seed mean)'),('gru','Plain GRU (3-seed mean)'),('lstm','Plain LSTM (3-seed mean)'),('dlinear','Plain DLinear (3-seed mean)'),('patchtst','Plain PatchTST (3-seed mean)')]]
     anchored=[vals[i] for i in [0,4,5,7,1,3]]
     x=np.arange(6)
-    a.bar(x-.18,[r.bias for r in plain],.36,color=C[4],label='绝对值预测')
-    a.bar(x+.18,[r.bias for r in anchored],.36,color=C[0],label='24 h 均值锚定')
+    a.bar(x-.18,[r.bias for r in plain],.36,color=C[4],label='直接预测')
+    a.bar(x+.18,[r.bias for r in anchored],.36,color=C[0],label='局部水平锚定')
     a.axhline(0,color='#333333',lw=.7); a.set_xticks(x,families,rotation=35,ha='right')
     a.set(ylabel='平均预测偏差（℃）',title='(b) 同一结构的水平处理对照')
     a.legend(frameon=False,fontsize=8)
@@ -126,12 +126,49 @@ def horizons():
     d=read('h720/fixed_origin_skill.csv'); step=read('h720/per_step_metrics.csv')
     f,axes=plt.subplots(1,2,figsize=(10,3.7),layout='constrained')
     a=axes[0]
-    for col,label,color in [('ridge_mae','Anchored Ridge',C[0]),('b2b_mae','96 h 均值',C[2])]: a.plot(d.horizon,d[col],'o-',label=label,color=color)
+    for col,label,color in [('ridge_mae','Anchored Ridge',C[0]),('b2b_mae','96 h 局部均值基线',C[2])]: a.plot(d.horizon,d[col],'o-',label=label,color=color)
     a.set(xticks=d.horizon,xlabel='预测长度 H（h）',ylabel='测试 MAE（℃）',title='(a) 固定 2,161 个共同预测起点'); a.legend(frameon=False)
     a=axes[1]
-    for col,label,color in [('Anchored Ridge_mae','Anchored Ridge',C[0]),('B2b_mae','96 h 均值',C[2]),('B1_mae','最后值',C[4])]: a.plot(step.step,step[col],label=label,color=color,lw=1)
+    for col,label,color in [('Anchored Ridge_mae','Anchored Ridge',C[0]),('B2b_mae','96 h 局部均值基线',C[2]),('B1_mae','持续性基线',C[4])]: a.plot(step.step,step[col],label=label,color=color,lw=1)
     a.set(xlabel='预测步 h（h）',ylabel='逐步 MAE（℃）',title='(b) 720 h 模型的逐预测步误差'); a.legend(frameon=False,fontsize=8)
     save(f,'fig3_horizon')
+
+def statistical_baselines():
+    """Plot the first test window and the MAE of each forecast in that window."""
+    from scripts.baselines_round1 import predict
+    data_path = ROOT / 'ETTh1.csv'
+    split_path = ROOT / 'outputs/splits/windows_L96.npz'
+    SOURCES.update([data_path, split_path])
+    data = pd.read_csv(data_path, parse_dates=['date'])
+    ot = data.OT.to_numpy(dtype=float)
+    with np.load(split_path) as windows:
+        x_start = int(windows['test_96_x_start'][0])
+        y_start = int(windows['test_96_y_start'][0])
+        y_end = int(windows['test_96_y_end'][0])
+    origin = x_start + 95
+    truth = ot[y_start:y_end]
+    train_mean = float(ot[:8640].mean())
+    models = [
+        ('B0_global_mean', '全局均值基线', '#777777', '--'),
+        ('B1_persistence', '持续性基线', '#0072B2', '-.'),
+        ('B2a_local_mean_24', '24 h 局部均值基线', '#D55E00', '--'),
+        ('B2b_local_mean_96', '96 h 局部均值基线', '#009E73', ':'),
+        ('B3_seasonal_naive_24', '日周期朴素基线', '#8B5DA9', '-.'),
+    ]
+    fig, ax = plt.subplots(figsize=(9, 4.8), layout='constrained')
+    steps = np.arange(1, 97)
+    ax.plot(steps, truth, color='#222222', linewidth=2, label='真实油温', zorder=5)
+    for code, label, color, style in models:
+        pred = predict(code, origin, 96, ot, train_mean)
+        mae = np.mean(np.abs(pred - truth))
+        ax.plot(steps, pred, color=color, linestyle=style, linewidth=1.6,
+                label=f'{label}（MAE {mae:.3f} ℃）')
+    ax.set(xlabel='预测步（h）', ylabel='油温（℃）', xlim=(1, 96))
+    ax.set_xticks([1, 24, 48, 72, 96])
+    ax.grid(alpha=.2, linewidth=.6)
+    ax.legend(loc='upper center', bbox_to_anchor=(.5, -.19), ncol=2,
+              frameon=False, fontsize=9)
+    save(fig, 'fig7_statistical_baselines')
 
 def ablations():
     pairs=[('负载输入',['仅油温','七通道'],[row('ridge_ms','S_control (per-variable)'),row('ridge_ms','MS (7 channels)')]),
@@ -149,7 +186,7 @@ def ablations():
     save(f,'fig4_ablations')
 
 def tables():
-    entries=[('ridge_level','Plain Ridge','Ridge（绝对值）'),('ridge_level','Anchored Ridge',r'\textbf{Anchored Ridge}'),('mlp','Plain MLP (3-seed mean)','MLP（绝对值）'),('mlp','Anchored MLP (3-seed mean)','MLP（锚定）'),('gru','Plain GRU (3-seed mean)','GRU（绝对值）'),('gru','Anchored GRU (3-seed mean)','GRU（锚定）'),('lstm','Plain LSTM (3-seed mean)','LSTM（绝对值）'),('lstm','Anchored LSTM (3-seed mean)','LSTM（锚定）'),('dlinear','Plain DLinear (3-seed mean)','DLinear（绝对值）'),('dlinear','Anchored DLinear (3-seed mean)','DLinear（锚定）'),('patchtst','Plain PatchTST (3-seed mean)','PatchTST 64维（绝对值）'),('patchtst','Anchored PatchTST (3-seed mean)','PatchTST 64维（锚定）'),('attn_ablation','Base PatchTST (3-seed mean)','PatchTST 16维（锚定）'),('attn_ablation','No-Attention PatchTST (3-seed mean)','片段混合 MLP（锚定）')]
+    entries=[('ridge_level','Plain Ridge','Ridge（直接预测）'),('ridge_level','Anchored Ridge',r'\textbf{Ridge（局部水平锚定）}'),('mlp','Plain MLP (3-seed mean)','MLP（直接预测）'),('mlp','Anchored MLP (3-seed mean)','MLP（局部水平锚定）'),('gru','Plain GRU (3-seed mean)','GRU（直接预测）'),('gru','Anchored GRU (3-seed mean)','GRU（局部水平锚定）'),('lstm','Plain LSTM (3-seed mean)','LSTM（直接预测）'),('lstm','Anchored LSTM (3-seed mean)','LSTM（局部水平锚定）'),('dlinear','Plain DLinear (3-seed mean)','DLinear（直接预测）'),('dlinear','Anchored DLinear (3-seed mean)','DLinear（局部水平锚定）'),('patchtst','Plain PatchTST (3-seed mean)','PatchTST 64维（直接预测）'),('patchtst','Anchored PatchTST (3-seed mean)','PatchTST 64维（局部水平锚定）'),('attn_ablation','Base PatchTST (3-seed mean)','PatchTST 16维（局部水平锚定）'),('attn_ablation','No-Attention PatchTST (3-seed mean)','片段混合 MLP（局部水平锚定）')]
     lines=[]
     for folder,model,label in entries:
         r=row(folder,model)
@@ -200,7 +237,7 @@ def solution_forecasts():
         a.plot(np.arange(-95,1),xte[k],color='#555555',lw=1,label='历史观测')
         a.plot(np.arange(1,97),yte[k],color='#222222',lw=1.4,label='未来真实油温')
         a.plot(np.arange(1,97),pred[k],color=C[0],lw=1.5,label='Anchored Ridge')
-        a.plot([1,96],[levels_te[k]]*2,color=C[2],ls='--',lw=1,label='24 h 均值预测')
+        a.plot([1,96],[levels_te[k]]*2,color=C[2],ls='--',lw=1,label='24 h 局部均值基线')
         a.axvline(0,color=C[4],ls=':',lw=1)
         a.set(xlabel='相对预测起点的时间（h）',ylabel='油温（℃）',
               title=f'({letter}) 首个预测时刻：{date[:10]} 00:00',xlim=(-95,96))
@@ -214,7 +251,7 @@ def solution_forecasts():
 
 if __name__=='__main__':
     assert hashlib.sha256((ROOT/'ETTh1.csv').read_bytes()).hexdigest() == 'f18de3ad269cef59bb07b5438d79bb3042d3be49bdeecf01c1cd6d29695ee066'
-    pipeline(); data_split(); architectures(); main_results(); horizons(); ablations(); tables(); solution_forecasts()
+    pipeline(); data_split(); architectures(); main_results(); horizons(); statistical_baselines(); ablations(); tables(); solution_forecasts()
     manifest={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(SOURCES)}
     (OUT/'source_manifest.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
-    print(f'Generated seven figures and two tables from {len(SOURCES)} source files; verified selected Ridge predictions.')
+    print(f'Generated eight figures and two tables from {len(SOURCES)} source files; verified selected Ridge predictions.')
