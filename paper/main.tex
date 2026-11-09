@@ -13,20 +13,20 @@
 \clubpenalty=10000
 \widowpenalty=10000
 \title{\bfseries 越复杂越好？}
-\author{匿名作者}
 \date{}
 
 \begin{document}
+\pagestyle{plain}
 \maketitle
 \begin{abstract}
-电力变压器油温预测需要根据已观测历史估计未来的温度水平与变化趋势。针对仅使用历史油温预测未来油温的单变量任务，在 ETTh1 小时级数据上构建并评估局部水平锚定 Ridge（岭回归，以下简称 Anchored Ridge）方案。该方案以最近 96 h 油温为输入，用最近 24 h 均值确定当前水平，用线性映射预测未来 96 h 的温度偏移，再加回局部水平。依据已有单变量预测、线性预测与实例归一化研究，比较多层感知机、循环网络、DLinear、PatchTST 和 SegRNN，并考察负载通道与历史长度。固定时间划分下，最终方案的测试均方误差为 4.613 ℃$^2$、平均绝对误差为 1.632 ℃；后者比 24 h 均值预测降低 10.3\%，与锚定 DLinear 的 1.635 ℃ 接近。保持 96 h 历史，将预测长度扩展到 192、336、720 h 时，平均绝对误差分别为 1.914、2.129、2.116 ℃。实验表明，当前任务中局部温度水平的处理直接影响预测误差，增加结构复杂度的作用随输入、参考水平和集成方式变化。最终形成由历史油温、局部水平估计和多输出 Ridge 组成的单模型预测方案，为 ETTh1 的单变量油温预测提供具体方法及其适用条件。
+电力变压器油温预测需要根据已观测历史估计未来的温度水平与变化趋势。针对仅使用历史油温预测未来油温的单变量任务，在 ETTh1 小时级数据上构建并评估局部水平锚定 Ridge（岭回归，以下简称 Anchored Ridge）方案。该方案以最近 96 h 油温为输入，用最近 24 h 均值确定当前水平，用线性映射预测未来 96 h 的温度偏移，再加回局部水平。依据已有单变量预测、线性预测与实例归一化研究，比较多层感知机、循环网络、DLinear、PatchTST 和 SegRNN，并考察负载通道与历史长度。固定时间划分下，最终方案的测试均方误差为 4.613 ℃$^2$、平均绝对误差为 1.632 ℃；后者比 24 h 均值预测降低 10.3\%，与锚定 DLinear 的 1.635 ℃ 接近。保持 96 h 历史，将预测长度扩展到 192、336、720 h 时，平均绝对误差分别为 1.914、2.129、2.116 ℃。实验表明，当前任务中局部温度水平的处理直接影响预测误差；在锚定残差上增加非线性结构没有带来稳定的单模型增益，集成可以降低方差，但需要多个网络和多次训练。最终形成由历史油温、局部水平估计和多输出 Ridge 组成的单模型预测方案，为 ETTh1 的单变量油温预测提供具体方法及其适用条件。
 
 \vspace{0.5em}
 \noindent\textbf{关键词：}变压器油温；单变量预测；长序列预测；ETTh1；Ridge；局部水平锚定
 \end{abstract}
 
 \section*{Abstract}
-Transformer oil-temperature forecasting requires estimating future temperature levels and temporal variation from observed history. We develop and evaluate a local-level anchored Ridge predictor for the univariate ETTh1 task, using historical oil temperature as the sole input. The predictor takes a 96-hour window, estimates its local level from the latest 24 hours, directly forecasts future deviations, and restores the level to obtain a 96-hour temperature trajectory. Building on prior work on univariate forecasting, linear predictors, and instance normalization, we compare multilayer perceptrons, recurrent networks, DLinear, PatchTST, and SegRNN, with additional experiments on load channels and history length. Under a fixed chronological split, the selected predictor achieves a mean squared error of 4.613 degrees Celsius squared and a mean absolute error (MAE) of 1.632 degrees Celsius. Its MAE is 10.3\% below the 24-hour mean baseline and close to the 1.635 achieved by anchored DLinear. With the same 96-hour input, extending the horizon to 192, 336, and 720 hours yields MAEs of 1.914, 2.129, and 2.116, respectively. Local-level handling directly affects forecasting error, while the effects of architectural complexity depend on inputs, reference levels, and ensembling. The resulting single-model solution combines historical oil temperature, local-level estimation, and multi-output Ridge regression, with its applicability assessed on the ETTh1 split.
+Transformer oil-temperature forecasting requires estimating future temperature levels and temporal variation from observed history. We develop and evaluate a local-level anchored Ridge predictor for the univariate ETTh1 task, using historical oil temperature as the sole input. The predictor takes a 96-hour window, estimates its local level from the latest 24 hours, directly forecasts future deviations, and restores the level to obtain a 96-hour temperature trajectory. Building on prior work on univariate forecasting, linear predictors, and instance normalization, we compare multilayer perceptrons, recurrent networks, DLinear, PatchTST, and SegRNN, with additional experiments on load channels and history length. Under a fixed chronological split, the selected predictor achieves a mean squared error of 4.613 degrees Celsius squared and a mean absolute error (MAE) of 1.632 degrees Celsius. Its MAE is 10.3\% below the 24-hour mean baseline and close to the 1.635 achieved by anchored DLinear. With the same 96-hour input, extending the horizon to 192, 336, and 720 hours yields MAEs of 1.914, 2.129, and 2.116, respectively. Local-level handling directly affects forecasting error; adding nonlinear structure on the anchored residual does not yield a consistent single-model gain, and ensembling reduces variance only at the cost of multiple networks. The resulting single-model solution combines historical oil temperature, local-level estimation, and multi-output Ridge regression, with its applicability assessed on the ETTh1 split.
 
 \section{引言}
 电力变压器运行时，油温随负荷与热状态变化。根据历史观测估计未来油温，是研究温度变化预警和设备运行安排的基础。Jiménez-Navarro 等围绕变压器油温预测构建了平滑残差网络，并同时考察误差与模型规模，说明预测精度和求解成本需要共同考虑\cite{jimenez2023oil}。本研究以油温（Oil Temperature, OT）为唯一预测目标，关注根据连续历史记录生成未来温度序列的具体方法。
@@ -158,9 +158,48 @@ MSE 单位为 ℃$^2$，MAE 与平均偏差单位为 ℃。所有主结果在恢
 
 表~\ref{tab:fivebaselines} 显示，训练段均值在测试段产生较大误差；局部均值与最后值更接近测试段温度水平。96 h 预测中，24 h 均值的 MAE 为 1.820 ℃，略低于 96 h 均值；192 h 及更长预测中，96 h 均值较低。24 h 均值因此作为后续锚定模型的参考基线。
 
-\section{线性模型的构建与比较}
+\section{从线性回归到局部水平锚定}
+统计基线表明，局部水平本身已经解释了相当一部分误差：最近 24 h 均值（B2a）在 96 h 任务上的 MAE 为 1.820 ℃。一个自然的改进是把 96 h 历史直接映射到 96 h 未来。我们先拟合普通多输出 Ridge，再根据其误差结构决定是否以及如何引入水平处理。
+
+\subsection{普通 Ridge 的水平偏差}
+普通 Ridge 以 96 h 绝对油温为输入，输出 96 h 绝对油温；输入在训练段按滞后标准化，输出保留摄氏度，正则化强度由验证集 MAE 选择。验证集上 $\alpha=10$ 最优，测试集 MSE 为 5.107、MAE 为 1.670 ℃、平均偏差为 $+0.780$ ℃。单看 MAE，它比 B2a 低 8.2\%，但偏差远高于 B2a 的 $+0.144$ ℃。
+
+普通 Ridge 的偏差随预测步单调增加：第 1--24 h 为 $+0.317$ ℃，第 73--96 h 达 $+1.105$ ℃（表~\ref{tab:bias_segments}）。训练段 OT 均值约为 17.13 ℃，测试段约为 14.85 ℃。普通 Ridge 的系数和接近 1，截距随预测步从 0.04 增至 1.21；当输入来自较低水平的测试段时，模型仍把预测拉向训练段均值，因而在冬季高估。这说明误差不是随机波动，而是系统性的水平偏移。
+
+若按测试集每个预测步的真实平均误差扣除偏差（仅用于诊断），普通 Ridge 的 MSE 从 5.107 降至 4.400，MAE 从 1.670 降至 1.604；加入局部水平锚定后的 Ridge（下称 Anchored Ridge）去偏前后几乎不变（4.613 至 4.598，1.632 至 1.640）。这说明普通 Ridge 的形状并不差，主要瓶颈是水平漂移；锚定的价值在于把水平从绝对温度中分离出来，而不是提升形状建模能力。
+
+验证集与测试集的差异也支持这一判断：验证集上普通 Ridge 的 MAE 为 2.229 ℃，略优于 Anchored Ridge 的 2.256 ℃；测试集上分别为 1.670 和 1.632 ℃。验证段处于夏秋、水平漂移较小，测试段进入冬季、漂移较大，锚定的收益主要在后者显现。
+
+\begin{table}[htbp]
+\centering\small
+\caption{96 h 输入、96 h 输出的水平诊断。B2a 为最近 24 h 均值基线。去偏 MSE/MAE 按测试集每个预测步的真实平均误差扣除，仅用于区分水平误差与形状误差，不参与预测。}
+\label{tab:level_diag}
+\begin{tabular}{lrrrrr}
+\toprule 模型 & MSE & MAE & 平均偏差 & 去偏 MSE & 去偏 MAE\\\midrule
+普通 Ridge & 5.107 & 1.670 & $+0.780$ & 4.400 & 1.604\\
+Anchored Ridge & 4.613 & 1.632 & $+0.105$ & 4.598 & 1.640\\
+B2a（24 h 均值） & 5.454 & 1.820 & $+0.144$ & 5.428 & 1.829\\\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{测试集分段的平均偏差（℃）。各段对应预测步 1--24、25--48、49--72 和 73--96。}
+\label{tab:bias_segments}
+\begin{tabular}{lrrrr}
+\toprule 模型 & 1--24 & 25--48 & 49--72 & 73--96\\\midrule
+普通 Ridge & $+0.317$ & $+0.737$ & $+0.963$ & $+1.105$\\
+Anchored Ridge & $+0.030$ & $+0.078$ & $+0.131$ & $+0.182$\\
+B2a（24 h 均值） & $+0.050$ & $+0.107$ & $+0.172$ & $+0.248$\\\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{参考水平与残差}
-局部水平锚定取 $\ell_t=\ell_t^{(24)}$，构造
+上述诊断把改进方向限定为水平处理：与其让线性映射同时学习绝对温度和未来变化，不如先把当前水平显式分离出来。局部水平取最近 24 h 均值
+\begin{equation}
+\ell_t=\ell_t^{(24)}=\frac{1}{24}\sum_{i=0}^{23}y_{t-i},
+\end{equation}
+并构造
 \begin{equation}
 \mathbf x_t^c=\mathbf x_t-\ell_t\mathbf1_L,\qquad
 \mathbf y_t^c=\mathbf y_t-\ell_t\mathbf1_H.
@@ -168,13 +207,15 @@ MSE 单位为 ℃$^2$，MAE 与平均偏差单位为 ℃。所有主结果在恢
 \end{equation}
 训练时参考水平由输入计算，目标与输入减去同一数值；预测时模型生成未来相对该水平的偏移量，再加回 $\ell_t$。图~\ref{fig:pipeline} 将参考水平作为独立支路接入输出端，说明中心化输入和恢复水平使用同一历史统计量。
 
+最后观测值对噪声敏感，96 h 均值更平滑但在快速变化时滞后；在 96 h 任务上，24 h 均值、最后值和 96 h 均值的 MAE 分别为 1.820、1.865 和 1.821 ℃。24 h 均值略优，因此作为主实验的参考；长预测中 96 h 均值略优，本文保留 24 h 以保持参考定义一致，并在后文长预测实验中与统计基线比较。该锚定的零模型是 B2a，Ridge 只学习相对偏移。
+
 \begin{figure}[htbp]
 \centering\includegraphics[width=\linewidth]{figures/fig1_pipeline.pdf}
 \caption{Anchored Ridge 的预测流程。历史输入分成残差建模与水平恢复两条支路。图中预测头输出油温残差；96 h 主实验的目标保留原单位，长预测实验则在头部输出后先完成目标反标准化。}
 \label{fig:pipeline}
 \end{figure}
 
-\subsection{Ridge 多步预测}
+\subsection{多输出 Ridge 与正则化}
 Ridge 在最小二乘损失中加入系数的二次惩罚。多输出 Ridge 用同一历史窗口分别拟合各个未来小时的温度。对 $n$ 个训练窗口，按滞后标准化后的输入矩阵记为 $Z\in\mathbb R^{n\times L}$，目标残差记为 $R\in\mathbb R^{n\times H}$。参数 $W\in\mathbb R^{L\times H}$ 与 $b\in\mathbb R^H$ 通过
 \begin{equation}
 \min_{W,b}\ \|R-ZW-\mathbf1_n b^\top\|_F^2+\alpha\|W\|_F^2
@@ -182,14 +223,20 @@ Ridge 在最小二乘损失中加入系数的二次惩罚。多输出 Ridge 用�
 \end{equation}
 求解。截距不受惩罚；每个预测步有一组历史权重。预测为 $\hat{\mathbf y}_t=W^\top\mathbf z_t+b+\ell_t\mathbf1_H$，因此 96 h 历史到 96 h 输出含 $96\times96+96=9,312$ 个回归系数与截距。
 
-若输入整体加上常数 $c$，局部均值也增加 $c$，中心化输入保持相同；固定标准化后的残差预测相同，最终输出增加 $c$。因此，该预测器对输入整体平移具有等变性。它显式保留当前水平，使线性映射主要拟合未来偏移量。
+采用直接多步而非递归，是因为每个未来小时可以独立拟合一组权重，避免一步预测误差沿预测区间累积；所有模型使用同一输入窗口，也便于与统计基线逐窗口比较。锚定后 $\alpha$ 网格扩展到 $\{0.1,1,10,100,1000\}$，验证 MAE 选中 $\alpha=100$；0.1 到 100 的测试 MAE 差异小于 0.001 ℃，说明相对偏移中的可学信号较弱，强正则化把模型压向 B2a，同时保留稳定的偏差修正。
 
-当残差预测在原单位下为零时，模型退化为 24 h 均值预测。这给出一个易解释的参考点；实际拟合的权重由训练损失与正则化决定。带目标标准化时，零标准化输出对应训练目标残差均值，恢复原单位后需同时计入该均值。
+若输入整体加上常数 $c$，局部均值也增加 $c$，中心化输入保持相同；固定标准化后的残差预测相同，最终输出增加 $c$。因此，该预测器对输入整体平移具有等变性。它显式保留当前水平，使线性映射主要拟合未来偏移量。当残差预测在原单位下为零时，模型退化为 24 h 均值预测；实际拟合的权重由训练损失与正则化决定。
 
-\subsection{线性模型比较}
-普通 Ridge 直接由历史拟合绝对油温；Anchored Ridge 使用局部水平恢复；DLinear 将输入分为趋势与剩余项后分别线性映射。三者在同一 96 h 输入与预测任务下进行评价，具体数值见表~\ref{tab:main}。普通 Ridge 的测试 MAE 为 1.670 ℃，Anchored Ridge 为 1.632 ℃，锚定 DLinear 的三种子均值为 1.635 ℃。Anchored Ridge 的平均偏差从普通 Ridge 的 +0.780 ℃ 降至 +0.105 ℃，因此选择它作为后续单模型方案。
+\subsection{线性模型比较与选择}
+普通 Ridge、Anchored Ridge 与 DLinear 的比较见表~\ref{tab:main}：普通 Ridge 的测试 MAE 为 1.670 ℃，Anchored Ridge 为 1.632 ℃，锚定 DLinear 的三种子均值为 1.635 ℃。Anchored Ridge 的平均偏差从普通 Ridge 的 $+0.780$ ℃ 降至 $+0.105$ ℃。
 
-\section{非线性预测模型}
+Anchored Ridge 相对普通 Ridge 的 MAE 仅降低 2.2\%，MSE 降低 9.7\%；配对 bootstrap 的 MAE 差为 $-0.037$ ℃，95\% 区间为 $[-0.149,+0.091]$ ℃，跨零；相对 B2a 的 MAE 差为 $-0.187$ ℃，区间为 $[-0.294,-0.072]$ ℃，不跨零。因此，锚定的稳健收益主要是相对局部均值基线，而不是相对普通 Ridge 的逐窗口优势；后者的改善集中在水平漂移较大的窗口。
+
+DLinear 通过趋势分解实现类似水平处理：绝对值版本的 MAE 为 1.843 ℃，锚定版本为 1.635 ℃，与 Anchored Ridge 相差约 0.003 ℃。这说明水平信息可以由不同结构捕捉，而不是某一种网络独有。本文选择 Anchored Ridge 作为后续单模型参照，原因是参数少、求解确定且无需随机种子；这一选择不意味着线性模型在形状上优于所有神经模型，后文将直接在锚定残差上检验非线性模型。
+
+\section{非线性模型能否改善预测}
+第 5 节表明，水平锚定已经把绝对温度中的系统性偏移分离出去，剩余的是相对当前水平的未来变化。一个自然的问题是：在这部分残差上，非线性模型能否比线性映射学得更好？如果误差主要来自水平而不是形状，增加网络容量就不应带来稳定收益。为检验这一点，本节在同一划分、同一 96 h 输入和同一 24 h 锚定下比较 MLP、GRU、LSTM、PatchTST 与 SegRNN，并进一步检查预测集成、预测长度、负载输入、历史长度和片段交互。结果是：水平处理显著改善了绝对值神经模型，但没有哪种非线性结构在单模型指标上稳定超过 Anchored Ridge；复杂度带来的变化主要落在种子波动和集成方式之内。
+
 \subsection{对照模型与输入}
 为确定油温预测器，比较线性、多层感知机、循环网络与片段模型。各模型均直接生成完整预测向量，绝对值版本预测标准化油温，锚定版本预测相对局部水平的偏移量。表~\ref{tab:models} 概括主要结构；附录~\ref{app:models} 展开门控状态、分解算子、片段编码和并行解码过程。
 
@@ -211,7 +258,6 @@ SegRNN & 48 h 分段，GRU 编码与并行预测 & 31,344\\\bottomrule
 输入对照分别检验六个负荷变量和更长历史：前者将油温输入扩为 96 h 七通道记录，后者将单变量历史延长至 336 h。片段交互对照保留 16 维 PatchTST 的嵌入与预测头，以参数量接近的片段混合 MLP 替换自注意力。这些比较为最终输入和模型选择提供依据。
 
 \FloatBarrier
-\section{线性与非线性模型的预测结果}
 \subsection{水平处理与预测误差}
 主实验固定输入与输出长度，先比较局部水平处理，再比较模型结构。默认 96 h 输入、96 h 输出下，最后值、24 h 均值、96 h 均值的测试 MAE 分别为 1.865、1.820、1.821 ℃。24 h 均值在这组基线中略低；后续长预测另外保留 96 h 均值作对照。表~\ref{tab:main} 给出不同预测器在未来 96 h 油温上的误差。
 
@@ -299,6 +345,9 @@ PatchTST 16维 & 4.842 & 1.644 & 4.632 & 1.600\\
 片段混合 MLP 的种子 MAE 标准差为 0.005 ℃，注意力模型为 0.034 ℃；注意力模型的预测集成 MAE 较低。前者显示单次训练波动较小，后者显示输出平均对该注意力模型有效。两种结果分别保留，用于选择单模型方案或三模型集成方案。
 
 SegRNN 采用 336 h 历史时，24 h 均值锚定版本的三种子 MAE 为 $1.788\pm0.049$ ℃，末值参考版本为 $1.694\pm0.021$ ℃。对应预测集成为 1.779 和 1.687 ℃，配对差“均值参考减末值参考”的区间为 $[+0.060,+0.120]$ ℃。因此，该结构采用末值参考更合适。
+
+\subsection{小结：非线性没有形成稳定增益}
+把 96 h 主结果、集成、长预测和输入消融放在一起，可以得到一致结论：非线性模型的主要收益来自水平锚定，而不是结构本身。绝对值的 MLP、GRU、LSTM 和 PatchTST 误差很高，锚定后立即降到与线性模型相近的范围；在锚定残差上继续增加深度、门控或注意力，没有把单模型 MAE 压到 1.632 ℃ 以下。16 维 PatchTST 的三模型集成达到 1.600 ℃，GRU 集成在 MSE 上达到 4.525，说明集成可以降低方差，但这需要三个网络和三次训练，不能解释为单一非线性结构的优势。负载通道、336 h 历史和自注意力替换也未提供稳定增益。因此，本文不把“更复杂的结构”作为最终方案，而把 Anchored Ridge 作为单模型基线；非线性模型的价值在于验证这一基线，而不是取代它。
 
 \section{讨论：模型复杂度与预测误差}
 \subsection{模型选择与已有研究}
