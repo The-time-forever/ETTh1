@@ -1,0 +1,18 @@
+{
+  "ETTh1.csv": "f18de3ad269cef59bb07b5438d79bb3042d3be49bdeecf01c1cd6d29695ee066",
+  "outputs\\attn_ablation\\test_metrics.csv": "a2b6bc97a6cc4d93702b4c00a4fe87f249ff4ccb865d0d09a416b88dc72e55b2",
+  "outputs\\dlinear\\test_metrics.csv": "54c750fb7ef90b9cb2b991872e49970491f706f9241c40a011ec1e3ee9197535",
+  "outputs\\gru\\test_metrics.csv": "c98bd6bef54e8241a0a231f4345ac04a6c66b711f473d9c757fe5486962d9ac6",
+  "outputs\\h192\\test_metrics.csv": "c6680e24ee5208a54245c7688954d7473e34814dbeecf73f172c5564effdf65e",
+  "outputs\\h336\\test_metrics.csv": "93be0dd89144ad905dd9e45235058a585a80fb954e0974a776395995cb453815",
+  "outputs\\h720\\fixed_origin_skill.csv": "d8681bd140968120aea9f6557519bca764bd7724aacca8dd42cb180463f73b47",
+  "outputs\\h720\\per_step_metrics.csv": "76a65bccf27079cb8e56e6fc149cf7bb84c2d2e0f3bac641fb5af73452223fd5",
+  "outputs\\h720\\test_metrics.csv": "c955917a80403d17759daa8b07b02e43d1f552369f15b0891fe1d4df31afd381",
+  "outputs\\lstm\\test_metrics.csv": "d7f3e6cd30761002186bfd178ad38adb3ca4e1786a1d42abcec4f50b82bb9a6c",
+  "outputs\\mlp\\test_metrics.csv": "f40817b97f69e487438bdcb93726f492cbb79e2d64af22130772ca82903001c7",
+  "outputs\\patchtst\\test_metrics.csv": "834e4c1ae980950c35e7dae1bdbed33cda3f28fca12d5b9505bccab0cdfef77b",
+  "outputs\\patchtst_l336\\test_metrics.csv": "1c68b15efbef02ff96bc2890d6da23a834d86b8e39d64cd89d43509859d67e06",
+  "outputs\\ridge_level\\test_metrics.csv": "1d12159c6e1a366b30f33e2d4a842a178b45bc8f6b2fe1296503deaa6cb2b35e",
+  "outputs\\ridge_ms\\test_metrics.csv": "91636b712fdb18ebf99ec1be482f907ce55e1c3b2a91c04271320cab44b01d2b",
+  "outputs\\segrnn\\test_metrics.csv": "6d5cc31d35d38079dc8e5d34f62955363b256dd5d01aa7793bbd31b07c6edac6"
+}

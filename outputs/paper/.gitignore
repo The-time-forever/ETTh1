@@ -1,0 +1,5 @@
+*.png
+*.pdf
+review_pages/
+build_console.txt
+main_text.txt

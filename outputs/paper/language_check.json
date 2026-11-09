@@ -1,0 +1,28 @@
+{
+  "file": "paper/main.tex",
+  "errors": [],
+  "warnings": [
+    {
+      "line": 0,
+      "rule": "number_repeat",
+      "message": "数字「192」全文出现 4 次",
+      "text": "192"
+    },
+    {
+      "line": 0,
+      "rule": "number_repeat",
+      "message": "数字「336」全文出现 12 次",
+      "text": "336"
+    },
+    {
+      "line": 0,
+      "rule": "number_repeat",
+      "message": "数字「720」全文出现 8 次",
+      "text": "720"
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 3
+  }
+}
